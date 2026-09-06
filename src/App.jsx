@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Roster from './pages/Roster.jsx'
@@ -16,10 +16,10 @@ export default function App() {
         <Route path="roster" element={<Roster />} />
         <Route path="schedule" element={<Schedule />} />
         <Route path="stats" element={<Stats />} />
-        <Route path="play-designer" element={<PlayDesigner />} />
         <Route path="playbooks" element={<Playbooks />} />
         <Route path="playbooks/:playbookId" element={<PlaybookLibrary />} />
         <Route path="playbooks/:playbookId/plays/:playId" element={<PlayDesigner />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   )

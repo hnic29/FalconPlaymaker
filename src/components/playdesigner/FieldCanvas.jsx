@@ -472,7 +472,7 @@ export default function FieldCanvas({
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       lastTimeRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // onAnimationDone/players/ball are read via refs; only isAnimating/speed should restart this loop
   }, [isAnimating, speed])
 
   function toCanvasCoords(e) {

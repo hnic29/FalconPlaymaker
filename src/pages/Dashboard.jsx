@@ -71,10 +71,10 @@ export default function Dashboard() {
           </p>
         </div>
         <Link
-          to="/play-designer"
+          to="/playbooks"
           className="px-4 py-2 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400 whitespace-nowrap"
         >
-          Open Play Designer
+          Open Playbooks
         </Link>
       </div>
     </div>

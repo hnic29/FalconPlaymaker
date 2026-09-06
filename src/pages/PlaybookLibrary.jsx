@@ -13,7 +13,7 @@ const SIDES = [
 export default function PlaybookLibrary() {
   const { playbookId } = useParams()
   const navigate = useNavigate()
-  const { playbooks, updatePlaybook, plays: allPlays, savePlay, deletePlay } = useAppData()
+  const { playbooks, updatePlaybook, plays: allPlays, savePlay, deletePlay, duplicatePlay } = useAppData()
   const playbook = playbooks.find((pb) => pb.id === playbookId)
 
   const [side, setSide] = useState('offense')
@@ -189,6 +189,13 @@ export default function PlaybookLibrary() {
                 </div>
               </button>
               <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => duplicatePlay(play.id)}
+                  title="Duplicate play"
+                  className="w-6 h-6 rounded-full bg-navy-950/90 text-slate-300 hover:text-gold-400 flex items-center justify-center text-xs"
+                >
+                  ⧉
+                </button>
                 <button
                   onClick={() => setEditingPlay(play)}
                   title="Edit play details"

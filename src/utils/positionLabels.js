@@ -9,16 +9,23 @@ const OFFENSE_LARGE = ['Q', 'C', 'X', 'Y', 'Z', 'H', 'F', 'LT', 'RT', 'LG', 'RG'
 const DEFENSE_BASE5 = ['R', 'CB', 'CB', 'S', 'S']
 const DEFENSE_LARGE = ['DE', 'DT', 'DE', 'MIKE', 'CB', 'CB', 'FS', 'DT', 'WILL', 'SAM', 'SS']
 
+// Special teams: kicker/punter, long snapper, holder, returner, then gunners
+// and wings/personal-protectors for larger units.
+const SPECIAL_BASE5 = ['K', 'LS', 'H', 'R', 'G']
+const SPECIAL_LARGE = ['K', 'LS', 'H', 'R', 'G', 'G', 'W', 'W', 'PP', 'S', 'S']
+
+const FALLBACK_PREFIX = { offense: 'P', defense: 'D', specialTeams: 'ST' }
+
 function getLabelTable(side, playersPerSide) {
   const n = playersPerSide || 5
-  const isDefense = side === 'defense'
-  if (n <= 5) return (isDefense ? DEFENSE_BASE5 : OFFENSE_BASE5).slice(0, n)
-  return isDefense ? DEFENSE_LARGE : OFFENSE_LARGE
+  const base5 = side === 'defense' ? DEFENSE_BASE5 : side === 'specialTeams' ? SPECIAL_BASE5 : OFFENSE_BASE5
+  const large = side === 'defense' ? DEFENSE_LARGE : side === 'specialTeams' ? SPECIAL_LARGE : OFFENSE_LARGE
+  return n <= 5 ? base5.slice(0, n) : large
 }
 
 export function getPositionLabel(index, side, playersPerSide) {
   const table = getLabelTable(side, playersPerSide)
   if (index < table.length) return table[index]
-  const base = table[index % table.length] || (side === 'defense' ? 'D' : 'P')
+  const base = table[index % table.length] || FALLBACK_PREFIX[side] || 'P'
   return `${base}${Math.floor(index / table.length) + 1}`
 }

@@ -6,7 +6,6 @@ const links = [
   { to: '/schedule', label: 'Schedule' },
   { to: '/stats', label: 'Stats' },
   { to: '/playbooks', label: 'Playbooks' },
-  { to: '/play-designer', label: 'Play Designer' },
 ]
 
 export default function Layout() {
