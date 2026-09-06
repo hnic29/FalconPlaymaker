@@ -4,9 +4,9 @@ import { getPositionLabel } from '../../utils/positionLabels.js'
 
 export const CANVAS_W = 562
 export const CANVAS_H = 1000
-const TOKEN_RADIUS = 20
-const HANDLE_RADIUS = 8
-const HANDLE_HIT_RADIUS = 14
+const TOKEN_RADIUS = 24
+const HANDLE_RADIUS = 10
+const HANDLE_HIT_RADIUS = 22
 const BASE_SPEED = 200 // canvas px/sec at multiplier 1
 const SPEED_TIERS = { slow: 0.6, medium: 1, fast: 1.6 }
 
@@ -501,13 +501,17 @@ export default function FieldCanvas({
     return Math.hypot(entity.x * CANVAS_W - x, entity.y * CANVAS_H - y) <= TOKEN_RADIUS
   }
 
-  function handleMouseDown(e) {
+  function handlePointerDown(e) {
     if (isAnimating) return
     didDragRef.current = false
     const { x, y } = toCanvasCoords(e)
+    // Explicitly capture the pointer once a drag starts so a fast finger swipe
+    // that briefly leaves the canvas bounds doesn't drop the touch/mouse drag.
+    const capture = () => e.target.setPointerCapture?.(e.pointerId)
     if (modeRef.current === 'move') {
       const hit = hitTest(x, y)
       if (hit) {
+        capture()
         onDragStart?.()
         draggingIdRef.current = hit.id
       }
@@ -517,6 +521,7 @@ export default function FieldCanvas({
       const selectedPlayer = playersRef.current.find((p) => p.id === selectedRef.current)
       const idx = hitTestRoutePoint(selectedPlayer, x, y)
       if (idx !== null) {
+        capture()
         onDragStart?.()
         draggingRoutePointRef.current = { playerId: selectedPlayer.id, index: idx }
       }
@@ -525,16 +530,18 @@ export default function FieldCanvas({
     if (modeRef.current === 'ball' && ballRef.current) {
       const idx = hitTestRoutePoint(ballRef.current, x, y)
       if (idx !== null) {
+        capture()
         draggingBallPointRef.current = idx
         return
       }
       if (hitTestEntity(ballRef.current, x, y)) {
+        capture()
         draggingBallOriginRef.current = true
       }
     }
   }
 
-  function handleMouseMove(e) {
+  function handlePointerMove(e) {
     if (draggingIdRef.current && modeRef.current === 'move') {
       const { x, y } = toCanvasCoords(e)
       const nx = Math.min(1, Math.max(0, x / CANVAS_W))
@@ -593,7 +600,7 @@ export default function FieldCanvas({
     }
   }
 
-  function handleMouseUp() {
+  function handlePointerUp() {
     const wasDragging = draggingIdRef.current != null || draggingRoutePointRef.current != null
     draggingBallOriginRef.current = false
     draggingBallPointRef.current = null
@@ -679,10 +686,10 @@ export default function FieldCanvas({
       ref={canvasRef}
       width={CANVAS_W}
       height={CANVAS_H}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onClick={handleClick}
       className="mx-auto block h-auto max-h-[75vh] w-auto max-w-full rounded-lg border-2 border-navy-700 cursor-crosshair touch-none"
     />

@@ -27,7 +27,7 @@ export default function PlayerForm({ initial, onSubmit, onCancel }) {
           value={form.name}
           onChange={handleChange('name')}
           required
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div>
@@ -35,7 +35,7 @@ export default function PlayerForm({ initial, onSubmit, onCancel }) {
         <input
           value={form.number}
           onChange={handleChange('number')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div>
@@ -43,7 +43,7 @@ export default function PlayerForm({ initial, onSubmit, onCancel }) {
         <select
           value={form.position}
           onChange={handleChange('position')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         >
           {POSITIONS.map((p) => (
             <option key={p} value={p}>
@@ -57,7 +57,7 @@ export default function PlayerForm({ initial, onSubmit, onCancel }) {
         <input
           value={form.notes}
           onChange={handleChange('notes')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div className="sm:col-span-2 flex gap-2 justify-end">
@@ -65,14 +65,14 @@ export default function PlayerForm({ initial, onSubmit, onCancel }) {
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
+            className="px-3 py-2.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
           >
             Cancel
           </button>
         )}
         <button
           type="submit"
-          className="px-4 py-1.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+          className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
         >
           {initial ? 'Save Changes' : 'Add Player'}
         </button>

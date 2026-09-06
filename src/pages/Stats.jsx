@@ -70,7 +70,7 @@ export default function Stats() {
         <h1 className="text-2xl font-black text-slate-100">Stats</h1>
         <button
           onClick={() => setShowAdd((s) => !s)}
-          className="px-4 py-2 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+          className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
         >
           {showAdd ? 'Close' : '+ Log Stat Line'}
         </button>
@@ -102,7 +102,7 @@ export default function Stats() {
               value={form.gameId}
               onChange={handleChange('gameId')}
               required
-              className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+              className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
             >
               <option value="">Select game…</option>
               {games.map((g) => (
@@ -118,7 +118,7 @@ export default function Stats() {
               value={form.playerId}
               onChange={handleChange('playerId')}
               required
-              className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+              className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
             >
               <option value="">Select player…</option>
               {players.map((p) => (
@@ -136,7 +136,7 @@ export default function Stats() {
                 min="0"
                 value={form[f.key]}
                 onChange={handleChange(f.key)}
-                className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+                className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
               />
             </div>
           ))}
@@ -144,13 +144,13 @@ export default function Stats() {
             <button
               type="button"
               onClick={() => setShowAdd(false)}
-              className="px-3 py-1.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
+              className="px-3 py-2.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+              className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
             >
               Save Stat Line
             </button>
@@ -178,7 +178,7 @@ export default function Stats() {
                   </span>
                   <button
                     onClick={() => deleteStatLine(sl.id)}
-                    className="text-xs font-semibold text-slate-400 hover:text-red-400"
+                    className="text-xs font-semibold text-slate-400 hover:text-red-400 px-2.5 py-2"
                   >
                     Delete
                   </button>

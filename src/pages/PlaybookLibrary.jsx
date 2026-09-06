@@ -77,7 +77,7 @@ export default function PlaybookLibrary() {
 
   return (
     <div>
-      <Link to="/playbooks" className="text-xs font-semibold text-slate-400 hover:text-gold-400">
+      <Link to="/playbooks" className="text-xs font-semibold text-slate-400 hover:text-gold-400 inline-block p-2 -m-2">
         ← Playbooks
       </Link>
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -91,7 +91,7 @@ export default function PlaybookLibrary() {
                 setFormationFilter(null)
                 setCategoryFilter(null)
               }}
-              className={`px-3 py-1.5 text-sm font-bold ${
+              className={`px-3 py-2.5 text-sm font-bold ${
                 side === s.key ? 'bg-gold-500 text-navy-950' : 'bg-navy-900 text-slate-300 hover:bg-navy-800'
               }`}
             >
@@ -111,7 +111,7 @@ export default function PlaybookLibrary() {
                 <li key={f}>
                   <button
                     onClick={() => setFormationFilter((cur) => (cur === f ? null : f))}
-                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-sm ${
+                    className={`w-full flex items-center justify-between px-2 py-2.5 rounded text-sm ${
                       formationFilter === f ? 'bg-navy-800 text-gold-400 font-semibold' : 'text-slate-300 hover:bg-navy-800'
                     }`}
                   >
@@ -121,15 +121,15 @@ export default function PlaybookLibrary() {
                 </li>
               ))}
             </ul>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <input
                 value={newFormationInput}
                 onChange={(e) => setNewFormationInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addFormation()}
                 placeholder="Add formation"
-                className="flex-1 min-w-0 rounded bg-navy-950 border border-navy-700 px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-gold-500"
+                className="flex-1 min-w-0 rounded bg-navy-950 border border-navy-700 px-2 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-gold-500"
               />
-              <button onClick={addFormation} className="px-2 rounded bg-navy-800 border border-navy-700 text-slate-200 text-xs font-bold hover:bg-navy-700">
+              <button onClick={addFormation} className="px-3.5 py-2.5 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700">
                 +
               </button>
             </div>
@@ -143,7 +143,7 @@ export default function PlaybookLibrary() {
                 <li key={c}>
                   <button
                     onClick={() => setCategoryFilter((cur) => (cur === c ? null : c))}
-                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-sm ${
+                    className={`w-full flex items-center justify-between px-2 py-2.5 rounded text-sm ${
                       categoryFilter === c ? 'bg-navy-800 text-gold-400 font-semibold' : 'text-slate-300 hover:bg-navy-800'
                     }`}
                   >
@@ -153,15 +153,15 @@ export default function PlaybookLibrary() {
                 </li>
               ))}
             </ul>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <input
                 value={newCategoryInput}
                 onChange={(e) => setNewCategoryInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addCategory()}
                 placeholder="Add category"
-                className="flex-1 min-w-0 rounded bg-navy-950 border border-navy-700 px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-gold-500"
+                className="flex-1 min-w-0 rounded bg-navy-950 border border-navy-700 px-2 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-gold-500"
               />
-              <button onClick={addCategory} className="px-2 rounded bg-navy-800 border border-navy-700 text-slate-200 text-xs font-bold hover:bg-navy-700">
+              <button onClick={addCategory} className="px-3.5 py-2.5 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700">
                 +
               </button>
             </div>
@@ -188,30 +188,31 @@ export default function PlaybookLibrary() {
                   <p className="text-sm font-semibold text-slate-100 truncate">{play.name}</p>
                 </div>
               </button>
-              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Always visible (not hover-only) so these work on touch devices, which have no hover state */}
+              <div className="absolute top-1.5 right-1.5 flex gap-1.5">
                 <button
                   onClick={() => duplicatePlay(play.id)}
                   title="Duplicate play"
-                  className="w-6 h-6 rounded-full bg-navy-950/90 text-slate-300 hover:text-gold-400 flex items-center justify-center text-xs"
+                  className="w-9 h-9 rounded-full bg-navy-950/90 text-slate-300 hover:text-gold-400 flex items-center justify-center text-sm"
                 >
                   ⧉
                 </button>
                 <button
                   onClick={() => setEditingPlay(play)}
                   title="Edit play details"
-                  className="w-6 h-6 rounded-full bg-navy-950/90 text-slate-300 hover:text-gold-400 flex items-center justify-center text-xs"
+                  className="w-9 h-9 rounded-full bg-navy-950/90 text-slate-300 hover:text-gold-400 flex items-center justify-center text-sm"
                 >
                   ⓘ
                 </button>
                 <button
                   onClick={() => handleDeletePlay(play)}
                   title="Delete play"
-                  className="w-6 h-6 rounded-full bg-navy-950/90 text-slate-300 hover:text-red-400 flex items-center justify-center text-xs"
+                  className="w-9 h-9 rounded-full bg-navy-950/90 text-slate-300 hover:text-red-400 flex items-center justify-center text-sm"
                 >
                   🗑
                 </button>
               </div>
-              <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-gold-500 text-navy-950 text-[10px] font-black flex items-center justify-center">
+              <span className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-gold-500 text-navy-950 text-xs font-black flex items-center justify-center">
                 {i + 1}
               </span>
             </div>

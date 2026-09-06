@@ -72,7 +72,7 @@ export default function Dashboard() {
         </div>
         <Link
           to="/playbooks"
-          className="px-4 py-2 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400 whitespace-nowrap"
+          className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400 whitespace-nowrap"
         >
           Open Playbooks
         </Link>

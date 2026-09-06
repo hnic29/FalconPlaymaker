@@ -41,14 +41,14 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div className="w-full max-w-3xl bg-navy-900 border border-navy-700 rounded-lg shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-navy-700">
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg" title="Cancel">
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg p-2.5 -m-2.5" title="Cancel">
             ✕
           </button>
           <h2 className="text-sm font-bold uppercase text-slate-100">{initial ? 'Edit Play' : 'New Play'}</h2>
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className="text-green-400 hover:text-green-300 text-lg disabled:opacity-30 disabled:hover:text-green-400"
+            className="text-green-400 hover:text-green-300 text-lg disabled:opacity-30 disabled:hover:text-green-400 p-2.5 -m-2.5"
             title={canSave ? 'Save' : 'Choose a formation first'}
           >
             ✓
@@ -63,7 +63,7 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. 26 Counter"
-                className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+                className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
                 autoFocus
               />
             </div>
@@ -73,7 +73,7 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Best vs. cover 2"
-                className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+                className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
               />
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                   <button
                     key={f}
                     onClick={() => setFormation(f)}
-                    className={`w-full text-left px-3 py-1.5 text-sm ${
+                    className={`w-full text-left px-3 py-3 text-sm ${
                       formation === f ? 'bg-navy-800 text-gold-400 font-semibold' : 'text-slate-300 hover:bg-navy-900'
                     }`}
                   >
@@ -102,11 +102,11 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                   onChange={(e) => setNewFormation(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addFormation()}
                   placeholder="New formation name"
-                  className="flex-1 rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+                  className="flex-1 rounded bg-navy-950 border border-navy-700 px-2 py-3 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
                 />
                 <button
                   onClick={addFormation}
-                  className="px-2.5 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700"
+                  className="px-4 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700"
                 >
                   +
                 </button>
@@ -121,7 +121,7 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                   <button
                     key={c}
                     onClick={() => toggleCategory(c)}
-                    className={`w-full text-left px-3 py-1.5 text-sm ${
+                    className={`w-full text-left px-3 py-3 text-sm ${
                       categories.includes(c) ? 'bg-navy-800 text-gold-400 font-semibold' : 'text-slate-300 hover:bg-navy-900'
                     }`}
                   >
@@ -136,11 +136,11 @@ export default function NewPlayModal({ playbook, initial, onSave, onClose }) {
                   onChange={(e) => setNewCategory(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addCategory()}
                   placeholder="New category name"
-                  className="flex-1 rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+                  className="flex-1 rounded bg-navy-950 border border-navy-700 px-2 py-3 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
                 />
                 <button
                   onClick={addCategory}
-                  className="px-2.5 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700"
+                  className="px-4 rounded bg-navy-800 border border-navy-700 text-slate-200 text-sm font-bold hover:bg-navy-700"
                 >
                   +
                 </button>

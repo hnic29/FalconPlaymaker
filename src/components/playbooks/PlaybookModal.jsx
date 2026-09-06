@@ -36,11 +36,11 @@ export default function PlaybookModal({ initial, onSave, onClose }) {
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-navy-900 border border-navy-700 rounded-lg shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-navy-700">
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg" title="Cancel">
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-lg p-2.5 -m-2.5" title="Cancel">
             ✕
           </button>
           <h2 className="text-sm font-bold uppercase text-slate-100">{initial?.id ? 'Edit Playbook' : 'New Playbook'}</h2>
-          <button onClick={handleSave} className="text-green-400 hover:text-green-300 text-lg" title="Save">
+          <button onClick={handleSave} className="text-green-400 hover:text-green-300 text-lg p-2.5 -m-2.5" title="Save">
             ✓
           </button>
         </div>
@@ -52,7 +52,7 @@ export default function PlaybookModal({ initial, onSave, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Cobras Playbook"
-              className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+              className="w-full rounded bg-navy-950 border border-navy-700 px-3 py-3 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
               autoFocus
             />
           </div>
@@ -64,7 +64,7 @@ export default function PlaybookModal({ initial, onSave, onClose }) {
                 <button
                   key={n}
                   onClick={() => setPlayersPerSide(n)}
-                  className={`w-11 h-9 rounded text-sm font-bold ${
+                  className={`w-11 h-11 rounded text-sm font-bold ${
                     playersPerSide === n
                       ? 'bg-gold-500 text-navy-950'
                       : 'bg-navy-950 border border-navy-700 text-slate-300 hover:text-white'

@@ -26,7 +26,7 @@ export default function StatsTable({ columns, rows, defaultSortKey }) {
               <th
                 key={col.key}
                 onClick={() => toggleSort(col.key)}
-                className="px-3 py-2 text-left font-bold text-gold-400 uppercase text-xs tracking-wide cursor-pointer select-none whitespace-nowrap"
+                className="px-3 py-3.5 text-left font-bold text-gold-400 uppercase text-xs tracking-wide cursor-pointer select-none whitespace-nowrap"
               >
                 {col.label}
                 {sortKey === col.key && <span className="ml-1">{desc ? '▼' : '▲'}</span>}

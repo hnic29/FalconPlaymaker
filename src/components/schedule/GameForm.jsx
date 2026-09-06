@@ -42,7 +42,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
           value={form.date}
           onChange={handleChange('date')}
           required
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div>
@@ -51,7 +51,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
           type="time"
           value={form.time}
           onChange={handleChange('time')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div>
@@ -59,7 +59,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
         <select
           value={form.type}
           onChange={handleChange('type')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         >
           <option value="game">Game</option>
           <option value="practice">Practice</option>
@@ -72,7 +72,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
           onChange={handleChange('opponent')}
           required={form.type === 'game'}
           placeholder={form.type === 'practice' ? 'Practice' : ''}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       <div>
@@ -80,14 +80,14 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
         <input
           value={form.location}
           onChange={handleChange('location')}
-          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+          className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
         />
       </div>
       {form.type === 'game' && (
         <>
           <div className="flex items-end gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-300 font-semibold">
-              <input type="checkbox" checked={form.played} onChange={handleChange('played')} />
+            <label className="flex items-center gap-2 text-sm text-slate-300 font-semibold py-2.5">
+              <input type="checkbox" checked={form.played} onChange={handleChange('played')} className="w-5 h-5 accent-gold-500" />
               Final
             </label>
           </div>
@@ -100,7 +100,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
                   min="0"
                   value={form.teamScore}
                   onChange={handleChange('teamScore')}
-                  className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+                  className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
                 />
               </div>
               <div>
@@ -110,7 +110,7 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
                   min="0"
                   value={form.oppScore}
                   onChange={handleChange('oppScore')}
-                  className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-1.5 text-slate-100 focus:outline-none focus:border-gold-500"
+                  className="w-full rounded bg-navy-950 border border-navy-700 px-2 py-3 text-slate-100 focus:outline-none focus:border-gold-500"
                 />
               </div>
             </>
@@ -122,14 +122,14 @@ export default function GameForm({ initial, onSubmit, onCancel }) {
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
+            className="px-3 py-2.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
           >
             Cancel
           </button>
         )}
         <button
           type="submit"
-          className="px-4 py-1.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+          className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
         >
           {initial ? 'Save Changes' : 'Add to Schedule'}
         </button>

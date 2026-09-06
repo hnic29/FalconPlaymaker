@@ -23,6 +23,7 @@ export default function AnimationOverlay({
 
   const handleDragStart = (e) => {
     e.preventDefault()
+    e.currentTarget.setPointerCapture?.(e.pointerId)
     const startX = e.clientX
     const startY = e.clientY
     const origX = pos.x
@@ -31,12 +32,13 @@ export default function AnimationOverlay({
     const handleMove = (ev) => {
       setPos({ x: origX + (ev.clientX - startX), y: origY + (ev.clientY - startY) })
     }
-    const handleUp = () => {
-      window.removeEventListener('mousemove', handleMove)
-      window.removeEventListener('mouseup', handleUp)
+    const handleUp = (ev) => {
+      ev.currentTarget?.releasePointerCapture?.(ev.pointerId)
+      window.removeEventListener('pointermove', handleMove)
+      window.removeEventListener('pointerup', handleUp)
     }
-    window.addEventListener('mousemove', handleMove)
-    window.addEventListener('mouseup', handleUp)
+    window.addEventListener('pointermove', handleMove)
+    window.addEventListener('pointerup', handleUp)
   }
 
   return (
@@ -45,9 +47,9 @@ export default function AnimationOverlay({
       style={{ left: pos.x, top: pos.y }}
     >
       <button
-        onMouseDown={handleDragStart}
+        onPointerDown={handleDragStart}
         title="Drag to move"
-        className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-white cursor-grab active:cursor-grabbing text-sm"
+        className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-white cursor-grab active:cursor-grabbing text-base touch-none"
       >
         ☰
       </button>
@@ -56,14 +58,14 @@ export default function AnimationOverlay({
         <button
           onClick={() => setShowSettings((s) => !s)}
           title="Speed"
-          className={`w-7 h-7 flex items-center justify-center rounded-full text-sm ${
+          className={`w-11 h-11 flex items-center justify-center rounded-full text-base ${
             showSettings ? 'bg-navy-700 text-gold-400' : 'text-slate-300 hover:bg-navy-800'
           }`}
         >
           ⚙
         </button>
         {showSettings && (
-          <div className="absolute top-9 left-1/2 -translate-x-1/2 bg-navy-900 border border-navy-700 rounded-lg p-3 w-72 shadow-xl max-h-80 overflow-y-auto">
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-navy-900 border border-navy-700 rounded-lg p-3 w-80 shadow-xl max-h-80 overflow-y-auto">
             <label className="flex flex-col gap-1 text-xs text-slate-300 font-semibold">
               Overall Speed
               <input
@@ -73,7 +75,7 @@ export default function AnimationOverlay({
                 step="0.1"
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
-                className="accent-gold-500"
+                className="accent-gold-500 h-8"
               />
               <span className="text-gold-400 self-end">{speed.toFixed(1)}x</span>
             </label>
@@ -84,11 +86,11 @@ export default function AnimationOverlay({
             {!players || players.length === 0 ? (
               <p className="text-xs text-slate-500">No players on the field yet.</p>
             ) : (
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {players.map((p) => (
                   <li key={p.id} className="flex items-center gap-1.5">
                     <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-navy-950 shrink-0"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-navy-950 shrink-0"
                       style={{ backgroundColor: p.color }}
                     >
                       {p.number}
@@ -98,7 +100,7 @@ export default function AnimationOverlay({
                       <button
                         key={t.key}
                         onClick={() => onSetSpeedTier(p.id, t.key)}
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-2.5 py-2 rounded text-[10px] font-bold ${
                           (p.speedTier || 'medium') === t.key
                             ? 'bg-gold-500 text-navy-950'
                             : 'bg-navy-950 border border-navy-700 text-slate-400 hover:text-white'
@@ -118,7 +120,7 @@ export default function AnimationOverlay({
       <button
         onClick={onResetToStart}
         title="Stop and reset to start"
-        className="w-7 h-7 flex items-center justify-center rounded-full text-slate-300 hover:bg-navy-800 text-sm"
+        className="w-11 h-11 flex items-center justify-center rounded-full text-slate-300 hover:bg-navy-800 text-base"
       >
         ⏮
       </button>
@@ -126,19 +128,19 @@ export default function AnimationOverlay({
       <button
         onClick={isAnimating ? onPause : onPlay}
         title={isAnimating ? 'Pause' : 'Play'}
-        className="w-10 h-10 flex items-center justify-center rounded-full bg-gold-500 text-navy-950 hover:bg-gold-400"
+        className="w-14 h-14 flex items-center justify-center rounded-full bg-gold-500 text-navy-950 hover:bg-gold-400"
       >
         {isAnimating ? (
-          <span className="text-lg leading-none">⏸</span>
+          <span className="text-xl leading-none">⏸</span>
         ) : (
-          <span className="text-lg leading-none ml-0.5">▶</span>
+          <span className="text-xl leading-none ml-0.5">▶</span>
         )}
       </button>
 
       <button
         onClick={onRestartAndReplay}
         title="Restart and immediately replay"
-        className="w-7 h-7 flex items-center justify-center rounded-full text-slate-300 hover:bg-navy-800 text-sm"
+        className="w-11 h-11 flex items-center justify-center rounded-full text-slate-300 hover:bg-navy-800 text-base"
       >
         ↺
       </button>
@@ -146,7 +148,7 @@ export default function AnimationOverlay({
       <button
         onClick={onFinish}
         title="Finish"
-        className="w-7 h-7 flex items-center justify-center rounded-full text-green-400 border border-green-500/60 hover:bg-navy-800 text-sm ml-1"
+        className="w-11 h-11 flex items-center justify-center rounded-full text-green-400 border border-green-500/60 hover:bg-navy-800 text-base ml-1"
       >
         ✓
       </button>

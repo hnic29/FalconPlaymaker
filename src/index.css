@@ -5,3 +5,15 @@
 body {
   @apply bg-navy-950 text-slate-100;
 }
+
+@layer base {
+  /* iOS Safari zooms the whole page in when a focused form control renders
+     smaller than 16px, regardless of viewport meta settings. Force 16px on
+     every control so tapping into a form on a phone never triggers that,
+     even where a component sets a smaller Tailwind text-size utility. */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

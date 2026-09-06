@@ -46,10 +46,10 @@ export default function GameCard({ game, onEdit, onDelete }) {
         </p>
       </div>
       <div className="flex flex-col gap-1 shrink-0">
-        <button onClick={onEdit} className="text-xs font-semibold text-slate-300 hover:text-gold-400">
+        <button onClick={onEdit} className="text-xs font-semibold text-slate-300 hover:text-gold-400 px-2.5 py-2">
           Edit
         </button>
-        <button onClick={onDelete} className="text-xs font-semibold text-slate-400 hover:text-red-400">
+        <button onClick={onDelete} className="text-xs font-semibold text-slate-400 hover:text-red-400 px-2.5 py-2">
           Delete
         </button>
       </div>

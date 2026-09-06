@@ -16,7 +16,7 @@ export default function Roster() {
         </h1>
         <button
           onClick={() => setShowAdd((s) => !s)}
-          className="px-4 py-2 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+          className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
         >
           {showAdd ? 'Close' : '+ Add Player'}
         </button>

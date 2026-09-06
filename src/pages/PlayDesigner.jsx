@@ -223,7 +223,10 @@ export default function PlayDesigner() {
     <div>
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
-          <Link to={`/playbooks/${playbookId}`} className="text-xs font-semibold text-slate-400 hover:text-gold-400">
+          <Link
+            to={`/playbooks/${playbookId}`}
+            className="inline-block text-xs font-semibold text-slate-400 hover:text-gold-400 p-2 -m-2"
+          >
             ← {playbook?.name || 'Playbook'}
           </Link>
           <h1 className="text-2xl font-black text-slate-100">{playName || 'Untitled Play'}</h1>
@@ -233,11 +236,11 @@ export default function PlayDesigner() {
             value={playName}
             onChange={(e) => setPlayName(e.target.value)}
             placeholder="Play name"
-            className="rounded bg-navy-900 border border-navy-700 px-3 py-1.5 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
+            className="rounded bg-navy-900 border border-navy-700 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-gold-500"
           />
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
+            className="px-4 py-2.5 rounded bg-gold-500 text-navy-950 text-sm font-bold hover:bg-gold-400"
           >
             {currentPlayId ? 'Update Play' : 'Save Play'}
           </button>
@@ -254,7 +257,7 @@ export default function PlayDesigner() {
                   setMode(m.key)
                   if (m.key !== 'route') setSelectedPlayerId(null)
                 }}
-                className={`px-3 py-1.5 rounded text-sm font-semibold ${
+                className={`px-3 py-2.5 rounded text-sm font-semibold ${
                   mode === m.key
                     ? 'bg-gold-500 text-navy-950'
                     : 'bg-navy-900 text-slate-200 hover:bg-navy-800 border border-navy-700'
@@ -268,7 +271,7 @@ export default function PlayDesigner() {
                 onClick={handleOpenAnimation}
                 disabled={showAnimation}
                 title="Animate this play"
-                className="px-3 py-1.5 rounded text-sm font-semibold bg-gold-500 text-navy-950 hover:bg-gold-400 disabled:opacity-30"
+                className="px-3 py-2.5 rounded text-sm font-semibold bg-gold-500 text-navy-950 hover:bg-gold-400 disabled:opacity-30"
               >
                 ▶ Animate
               </button>
@@ -276,7 +279,7 @@ export default function PlayDesigner() {
                 onClick={undo}
                 disabled={!canUndo || isAnimating}
                 title="Undo (Ctrl+Z)"
-                className="px-3 py-1.5 rounded text-sm font-semibold bg-navy-900 text-slate-200 hover:bg-navy-800 border border-navy-700 disabled:opacity-30 disabled:hover:bg-navy-900"
+                className="px-3 py-2.5 rounded text-sm font-semibold bg-navy-900 text-slate-200 hover:bg-navy-800 border border-navy-700 disabled:opacity-30 disabled:hover:bg-navy-900"
               >
                 ↶ Undo
               </button>
@@ -284,13 +287,14 @@ export default function PlayDesigner() {
                 onClick={redo}
                 disabled={!canRedo || isAnimating}
                 title="Redo (Ctrl+Y)"
-                className="px-3 py-1.5 rounded text-sm font-semibold bg-navy-900 text-slate-200 hover:bg-navy-800 border border-navy-700 disabled:opacity-30 disabled:hover:bg-navy-900"
+                className="px-3 py-2.5 rounded text-sm font-semibold bg-navy-900 text-slate-200 hover:bg-navy-800 border border-navy-700 disabled:opacity-30 disabled:hover:bg-navy-900"
               >
                 ↷ Redo
               </button>
             </div>
           </div>
-          <p className="text-xs text-slate-400 mb-2">{MODES.find((m) => m.key === mode)?.hint}</p>
+          {/* min-h reserves space for the longest hint so switching modes never shifts the canvas below it */}
+          <p className="text-xs text-slate-400 mb-2 min-h-[2rem] sm:min-h-[1rem]">{MODES.find((m) => m.key === mode)?.hint}</p>
 
           <div className="relative">
             <FieldCanvas
@@ -329,6 +333,7 @@ export default function PlayDesigner() {
 
             {selectedPlayer && (
               <PlayerToolbar
+                key={selectedPlayer.id}
                 player={selectedPlayer}
                 onUpdate={updateSelected}
                 onSetCenter={() =>
@@ -352,23 +357,23 @@ export default function PlayDesigner() {
                 {players.map((p) => (
                   <li
                     key={p.id}
-                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-sm ${
+                    className={`flex items-center gap-1 rounded pl-2 pr-0.5 text-sm ${
                       p.id === selectedPlayerId ? 'bg-navy-800 border border-gold-500' : 'bg-navy-950'
                     }`}
                   >
                     <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-navy-950 shrink-0"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-navy-950 shrink-0"
                       style={{ backgroundColor: p.color }}
                     >
                       {p.number}
                     </span>
-                    <span className="flex-1 truncate text-slate-200">{p.label}</span>
+                    <span className="flex-1 min-w-0 truncate text-slate-200 py-2.5 px-1.5">{p.label}</span>
                     <button
                       onClick={() => {
                         setMode('route')
                         setSelectedPlayerId(p.id)
                       }}
-                      className="text-xs font-semibold text-slate-400 hover:text-gold-400"
+                      className="text-xs font-semibold text-slate-400 hover:text-gold-400 px-2.5 py-2.5"
                     >
                       Route
                     </button>
@@ -377,7 +382,7 @@ export default function PlayDesigner() {
                         setPlayers((prev) => prev.filter((pl) => pl.id !== p.id))
                         if (selectedPlayerId === p.id) setSelectedPlayerId(null)
                       }}
-                      className="text-xs font-semibold text-slate-400 hover:text-red-400"
+                      className="text-xs font-semibold text-slate-400 hover:text-red-400 px-2.5 py-2.5"
                     >
                       Delete
                     </button>
@@ -399,7 +404,7 @@ export default function PlayDesigner() {
               <p className="text-xs font-bold text-gold-400 uppercase">Play Details</p>
               <button
                 onClick={() => setShowDetailsModal(true)}
-                className="text-xs font-semibold text-slate-400 hover:text-gold-400"
+                className="text-xs font-semibold text-slate-400 hover:text-gold-400 p-2 -m-2"
               >
                 Edit Details
               </button>
