@@ -23,7 +23,7 @@ const MAX_HISTORY = 100
 
 export default function PlayDesigner() {
   const { playbookId, playId } = useParams()
-  const { plays: allPlays, savePlay, playbooks, updatePlaybook } = useAppData()
+  const { plays: allPlays, savePlay, playbooks, updatePlaybook, team } = useAppData()
   const playbook = playbooks.find((pb) => pb.id === playbookId) || null
   const [playMeta, setPlayMeta] = useState({ formation: '', categories: [], notes: '', side: 'offense' })
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -304,6 +304,7 @@ export default function PlayDesigner() {
               onDragEnd={endTransientChange}
               mode={mode}
               fieldLines={playbook?.fieldLines || '53.3'}
+              team={team}
               positionSide={playMeta.side || 'offense'}
               playersPerSide={playbook?.playersPerSide || 5}
               selectedPlayerId={selectedPlayerId}

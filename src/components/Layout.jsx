@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAppData } from '../context/AppDataContext.jsx'
+import TeamInfoModal from './team/TeamInfoModal.jsx'
 
 const links = [
   { to: '/', label: 'Dashboard', end: true },
@@ -9,6 +12,9 @@ const links = [
 ]
 
 export default function Layout() {
+  const { team, updateTeam } = useAppData()
+  const [showTeamModal, setShowTeamModal] = useState(false)
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-navy-900 border-b-4 border-gold-500 shadow-lg">
@@ -37,6 +43,22 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
+          <button
+            onClick={() => setShowTeamModal(true)}
+            title="Team info"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-md border border-navy-700 hover:bg-navy-800 shrink-0"
+          >
+            {team.logo ? (
+              <img src={team.logo} alt="" className="w-7 h-7 rounded object-contain" style={{ backgroundColor: team.color }} />
+            ) : (
+              <span className="w-7 h-7 rounded flex items-center justify-center text-navy-950 text-xs font-black" style={{ backgroundColor: team.color }}>
+                {team.abbreviation ? team.abbreviation.slice(0, 2) : 'ⓘ'}
+              </span>
+            )}
+            <span className="text-sm font-semibold text-slate-200 whitespace-nowrap max-w-[8rem] truncate">
+              {team.name || 'Team Info'}
+            </span>
+          </button>
         </div>
       </header>
       <main className="flex-1 bg-navy-950">
@@ -44,6 +66,10 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {showTeamModal && (
+        <TeamInfoModal initial={team} onSave={(data) => { updateTeam(data); setShowTeamModal(false) }} onClose={() => setShowTeamModal(false)} />
+      )}
     </div>
   )
 }

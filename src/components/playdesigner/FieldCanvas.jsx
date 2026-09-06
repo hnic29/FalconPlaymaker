@@ -14,18 +14,19 @@ function tierMultiplier(player) {
   return SPEED_TIERS[player.speedTier] ?? 1
 }
 
-function drawField(ctx, fieldLines) {
+function drawField(ctx, fieldLines, team) {
   drawFieldLines(ctx, CANVAS_W, CANVAS_H, fieldLines)
 
   if (fieldLines === 'none') return
 
   const ezHeight = CANVAS_H * 0.1
-  ctx.fillStyle = '#facc15'
-  ctx.font = 'bold 20px sans-serif'
+  const label = team?.abbreviation ? team.abbreviation : 'END ZONE'
+  ctx.fillStyle = team?.abbreviation ? team.color || '#facc15' : '#facc15'
+  ctx.font = `bold ${team?.abbreviation ? 26 : 20}px sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('END ZONE', CANVAS_W / 2, ezHeight / 2)
-  ctx.fillText('END ZONE', CANVAS_W / 2, CANVAS_H - ezHeight / 2)
+  ctx.fillText(label, CANVAS_W / 2, ezHeight / 2)
+  ctx.fillText(label, CANVAS_W / 2, CANVAS_H - ezHeight / 2)
 }
 
 function fullPath(player) {
@@ -283,11 +284,11 @@ function drawPlayer(ctx, px, py, player, isSelected, points) {
 // Renders a play at an arbitrary size (e.g. a small library card) by scaling
 // into the same CANVAS_W x CANVAS_H coordinate space the full editor uses, so
 // thumbnails stay pixel-faithful to what the play actually looks like.
-export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3') {
+export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', team) {
   ctx.save()
   ctx.clearRect(0, 0, w, h)
   ctx.scale(w / CANVAS_W, h / CANVAS_H)
-  drawField(ctx, fieldLines)
+  drawField(ctx, fieldLines, team)
 
   players.forEach((player) => {
     const px = player.x * CANVAS_W
@@ -321,6 +322,7 @@ export default function FieldCanvas({
   onDragEnd,
   mode,
   fieldLines = '53.3',
+  team,
   positionSide = 'offense',
   playersPerSide = 5,
   selectedPlayerId,
@@ -366,7 +368,7 @@ export default function FieldCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    drawField(ctx, fieldLines)
+    drawField(ctx, fieldLines, team)
     const list = playersRef.current
     const ball = ballRef.current
     const elapsed = elapsedRef.current
@@ -439,7 +441,7 @@ export default function FieldCanvas({
 
   useEffect(() => {
     draw()
-  }, [players, selectedPlayerId, speed, ball, fieldLines])
+  }, [players, selectedPlayerId, speed, ball, fieldLines, team])
 
   useEffect(() => {
     elapsedRef.current = 0

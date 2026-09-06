@@ -10,12 +10,14 @@ export function AppDataProvider({ children }) {
   const [statLines, setStatLines] = useState(() => loadState('statLines', []))
   const [plays, setPlays] = useState(() => loadState('plays', []))
   const [playbooks, setPlaybooks] = useState(() => loadState('playbooks', []))
+  const [team, setTeam] = useState(() => loadState('team', { name: '', abbreviation: '', color: '#facc15', logo: null }))
 
   useEffect(() => saveState('players', players), [players])
   useEffect(() => saveState('games', games), [games])
   useEffect(() => saveState('statLines', statLines), [statLines])
   useEffect(() => saveState('plays', plays), [plays])
   useEffect(() => saveState('playbooks', playbooks), [playbooks])
+  useEffect(() => saveState('team', team), [team])
 
   const addPlayer = (player) => setPlayers((p) => [...p, { id: newId(), ...player }])
   const updatePlayer = (id, patch) =>
@@ -68,7 +70,11 @@ export function AppDataProvider({ children }) {
     setPlays((pl) => pl.filter((p) => p.playbookId !== id))
   }
 
+  const updateTeam = (patch) => setTeam((t) => ({ ...t, ...patch }))
+
   const value = {
+    team,
+    updateTeam,
     players,
     addPlayer,
     updatePlayer,

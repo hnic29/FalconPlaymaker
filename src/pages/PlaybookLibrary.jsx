@@ -13,7 +13,7 @@ const SIDES = [
 export default function PlaybookLibrary() {
   const { playbookId } = useParams()
   const navigate = useNavigate()
-  const { playbooks, updatePlaybook, plays: allPlays, savePlay, deletePlay, duplicatePlay } = useAppData()
+  const { playbooks, updatePlaybook, plays: allPlays, savePlay, deletePlay, duplicatePlay, team } = useAppData()
   const playbook = playbooks.find((pb) => pb.id === playbookId)
 
   const [side, setSide] = useState('offense')
@@ -181,7 +181,7 @@ export default function PlaybookLibrary() {
             <div key={play.id} className="rounded-lg border border-navy-700 bg-navy-900 overflow-hidden group relative">
               <button onClick={() => navigate(`/playbooks/${playbookId}/plays/${play.id}`)} className="block w-full text-left">
                 <div className="aspect-[4/3] bg-navy-950">
-                  <PlayThumbnail players={play.players} ball={play.ball} fieldLines={playbook.fieldLines} />
+                  <PlayThumbnail players={play.players} ball={play.ball} fieldLines={playbook.fieldLines} team={team} />
                 </div>
                 <div className="px-2 py-1.5">
                   <p className="text-[10px] text-slate-500 uppercase truncate">{play.formation || 'No formation'}</p>
