@@ -403,10 +403,58 @@ function drawOptionRoute(ctx, opt, isSelected) {
   ctx.stroke()
 }
 
+const STATIC_BALL_ORIGIN_RADIUS = 6
+
+// A static ball annotation diagrams where the football is (and, if a pass
+// line is drawn, where it moves to) at a moment in the play, without being
+// tied to the single animated ball entity and without animating itself. Its
+// pass line reuses the same route-rendering code as a player's route.
+function staticBallAsRoutePlayer(sb) {
+  return { x: sb.x, y: sb.y, route: sb.route, color: sb.color, lineColor: sb.lineColor, curved: !!sb.curved }
+}
+
+function drawStaticBallAnnotation(ctx, sb, isSelected) {
+  const virtual = staticBallAsRoutePlayer(sb)
+  const points = renderPathPoints(virtual)
+  if (points.length > 1) drawRoute(ctx, virtual)
+
+  const origin = { x: sb.x * CANVAS_W, y: sb.y * CANVAS_H }
+  const last = points[points.length - 1] || origin
+  let angle = -Math.PI / 4
+  if (points.length > 1) {
+    const prev = points[points.length - 2]
+    angle = Math.atan2(last.y - prev.y, last.x - prev.x)
+  }
+  drawBall(ctx, last.x, last.y, angle)
+
+  if (isSelected) {
+    ctx.beginPath()
+    ctx.arc(last.x, last.y, TOKEN_RADIUS * 0.7, 0, Math.PI * 2)
+    ctx.lineWidth = 2
+    ctx.strokeStyle = '#ffffff'
+    ctx.stroke()
+  }
+
+  if (sb.label && sb.label.trim()) {
+    ctx.fillStyle = sb.lineColor || sb.color
+    ctx.font = 'bold 14px sans-serif'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(sb.label, last.x + 14, last.y)
+  }
+
+  // Small origin handle so the annotation stays selectable/draggable even
+  // once its pass line moves the ball icon far away.
+  ctx.beginPath()
+  ctx.arc(origin.x, origin.y, STATIC_BALL_ORIGIN_RADIUS, 0, Math.PI * 2)
+  ctx.fillStyle = sb.lineColor || sb.color
+  ctx.fill()
+}
+
 // Renders a play at an arbitrary size (e.g. a small library card) by scaling
 // into the same CANVAS_W x CANVAS_H coordinate space the full editor uses, so
 // thumbnails stay pixel-faithful to what the play actually looks like.
-export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', team, optionRoutes = []) {
+export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', team, optionRoutes = [], staticBalls = []) {
   ctx.save()
   ctx.clearRect(0, 0, w, h)
   ctx.scale(w / CANVAS_W, h / CANVAS_H)
@@ -420,6 +468,7 @@ export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', t
   })
 
   optionRoutes.forEach((opt) => drawOptionRoute(ctx, opt, false))
+  staticBalls.forEach((sb) => drawStaticBallAnnotation(ctx, sb, false))
 
   if (ball) {
     const ballPoints = renderPathPoints(ball)
@@ -457,6 +506,10 @@ export default function FieldCanvas({
   selectedOptionRouteId,
   setSelectedOptionRouteId,
   activeBranchIndex = 0,
+  staticBalls = [],
+  setStaticBalls,
+  selectedStaticBallId,
+  setSelectedStaticBallId,
   isAnimating,
   onAnimationDone,
   speed,
@@ -468,10 +521,12 @@ export default function FieldCanvas({
   const playersRef = useRef(players)
   const ballRef = useRef(ball)
   const optionRoutesRef = useRef(optionRoutes)
+  const staticBallsRef = useRef(staticBalls)
   const modeRef = useRef(mode)
   const selectedRef = useRef(selectedPlayerId)
   const selectedOptionRef = useRef(selectedOptionRouteId)
   const activeBranchRef = useRef(activeBranchIndex)
+  const selectedStaticBallRef = useRef(selectedStaticBallId)
   const elapsedRef = useRef(0)
   const rafRef = useRef(null)
   const lastTimeRef = useRef(null)
@@ -479,6 +534,8 @@ export default function FieldCanvas({
   const draggingRoutePointRef = useRef(null)
   const draggingOptionIdRef = useRef(null)
   const draggingBranchPointRef = useRef(null)
+  const draggingStaticBallIdRef = useRef(null)
+  const draggingStaticBallPointRef = useRef(null)
   const draggingBallOriginRef = useRef(false)
   const draggingBallPointRef = useRef(null)
   const didDragRef = useRef(false)
@@ -505,6 +562,12 @@ export default function FieldCanvas({
   useEffect(() => {
     activeBranchRef.current = activeBranchIndex
   }, [activeBranchIndex])
+  useEffect(() => {
+    staticBallsRef.current = staticBalls
+  }, [staticBalls])
+  useEffect(() => {
+    selectedStaticBallRef.current = selectedStaticBallId
+  }, [selectedStaticBallId])
 
   function draw() {
     const canvas = canvasRef.current
@@ -544,6 +607,27 @@ export default function FieldCanvas({
           ctx.fill()
           ctx.lineWidth = 2
           ctx.strokeStyle = selectedOpt.lineColor || selectedOpt.color
+          ctx.stroke()
+        })
+      }
+    }
+
+    staticBallsRef.current.forEach((sb) => {
+      drawStaticBallAnnotation(ctx, sb, sb.id === selectedStaticBallRef.current)
+    })
+
+    if (modeRef.current === 'staticBall' && elapsed === 0) {
+      const selectedSb = staticBallsRef.current.find((s) => s.id === selectedStaticBallRef.current)
+      if (selectedSb) {
+        selectedSb.route.forEach((pt) => {
+          const hx = pt.x * CANVAS_W
+          const hy = pt.y * CANVAS_H
+          ctx.beginPath()
+          ctx.arc(hx, hy, HANDLE_RADIUS, 0, Math.PI * 2)
+          ctx.fillStyle = '#ffffff'
+          ctx.fill()
+          ctx.lineWidth = 2
+          ctx.strokeStyle = selectedSb.lineColor || selectedSb.color
           ctx.stroke()
         })
       }
@@ -605,7 +689,20 @@ export default function FieldCanvas({
 
   useEffect(() => {
     draw()
-  }, [players, selectedPlayerId, speed, ball, fieldLines, team, optionRoutes, selectedOptionRouteId, activeBranchIndex, mode])
+  }, [
+    players,
+    selectedPlayerId,
+    speed,
+    ball,
+    fieldLines,
+    team,
+    optionRoutes,
+    selectedOptionRouteId,
+    activeBranchIndex,
+    staticBalls,
+    selectedStaticBallId,
+    mode,
+  ])
 
   useEffect(() => {
     elapsedRef.current = 0
@@ -681,6 +778,19 @@ export default function FieldCanvas({
     return null
   }
 
+  function hitTestStaticBall(x, y) {
+    return staticBallsRef.current.find((sb) => Math.hypot(sb.x * CANVAS_W - x, sb.y * CANVAS_H - y) <= STATIC_BALL_ORIGIN_RADIUS + 8)
+  }
+
+  function hitTestStaticBallPoint(sb, x, y) {
+    if (!sb) return null
+    for (let i = 0; i < sb.route.length; i++) {
+      const pt = sb.route[i]
+      if (Math.hypot(pt.x * CANVAS_W - x, pt.y * CANVAS_H - y) <= HANDLE_HIT_RADIUS) return i
+    }
+    return null
+  }
+
   function handlePointerDown(e) {
     if (isAnimating) return
     didDragRef.current = false
@@ -710,6 +820,15 @@ export default function FieldCanvas({
         return
       }
     }
+    if (modeRef.current === 'staticBall' && selectedStaticBallRef.current) {
+      const selectedSb = staticBallsRef.current.find((s) => s.id === selectedStaticBallRef.current)
+      const idx = hitTestStaticBallPoint(selectedSb, x, y)
+      if (idx !== null) {
+        capture()
+        draggingStaticBallPointRef.current = { staticBallId: selectedSb.id, index: idx }
+        return
+      }
+    }
     if (modeRef.current === 'ball' && ballRef.current) {
       const idx = hitTestRoutePoint(ballRef.current, x, y)
       if (idx !== null) {
@@ -725,8 +844,8 @@ export default function FieldCanvas({
     }
 
     // Dragging a player token repositions it in every mode - no need to
-    // switch to a dedicated "move" tool first. Option route origins work the
-    // same way.
+    // switch to a dedicated "move" tool first. Option route and static ball
+    // origins work the same way.
     const hitPlayer = hitTest(x, y)
     if (hitPlayer) {
       capture()
@@ -738,6 +857,12 @@ export default function FieldCanvas({
     if (hitOpt) {
       capture()
       draggingOptionIdRef.current = hitOpt.id
+      return
+    }
+    const hitSb = hitTestStaticBall(x, y)
+    if (hitSb) {
+      capture()
+      draggingStaticBallIdRef.current = hitSb.id
     }
   }
 
@@ -819,6 +944,41 @@ export default function FieldCanvas({
       )
       return
     }
+    if (draggingStaticBallIdRef.current) {
+      const { x, y } = toCanvasCoords(e)
+      const nx = Math.min(1, Math.max(0, x / CANVAS_W))
+      const ny = Math.min(1, Math.max(0, y / CANVAS_H))
+      didDragRef.current = true
+      setStaticBalls(
+        (prev) =>
+          prev.map((sb) => {
+            if (sb.id !== draggingStaticBallIdRef.current) return sb
+            const dx = nx - sb.x
+            const dy = ny - sb.y
+            return { ...sb, x: nx, y: ny, route: sb.route.map((pt) => ({ ...pt, x: pt.x + dx, y: pt.y + dy })) }
+          }),
+        { transient: true },
+      )
+      return
+    }
+    if (draggingStaticBallPointRef.current && modeRef.current === 'staticBall') {
+      const { x, y } = toCanvasCoords(e)
+      const nx = Math.min(1, Math.max(0, x / CANVAS_W))
+      const ny = Math.min(1, Math.max(0, y / CANVAS_H))
+      const { staticBallId, index } = draggingStaticBallPointRef.current
+      didDragRef.current = true
+      setStaticBalls(
+        (prev) =>
+          prev.map((sb) => {
+            if (sb.id !== staticBallId) return sb
+            const route = sb.route.slice()
+            route[index] = { ...route[index], x: nx, y: ny }
+            return { ...sb, route }
+          }),
+        { transient: true },
+      )
+      return
+    }
     if (draggingBallOriginRef.current && modeRef.current === 'ball') {
       const { x, y } = toCanvasCoords(e)
       const nx = Math.min(1, Math.max(0, x / CANVAS_W))
@@ -853,6 +1013,8 @@ export default function FieldCanvas({
     draggingRoutePointRef.current = null
     draggingOptionIdRef.current = null
     draggingBranchPointRef.current = null
+    draggingStaticBallIdRef.current = null
+    draggingStaticBallPointRef.current = null
     if (wasDraggingWithHistory) onDragEnd?.({ discard: !didDragRef.current })
   }
 
@@ -871,6 +1033,7 @@ export default function FieldCanvas({
     if (hit && modeRef.current !== 'erase') {
       setSelectedPlayerId(hit.id)
       setSelectedOptionRouteId?.(null)
+      setSelectedStaticBallId?.(null)
       setMode?.('route')
       return
     }
@@ -880,7 +1043,16 @@ export default function FieldCanvas({
       if (hitOpt) {
         setSelectedOptionRouteId?.(hitOpt.id)
         setSelectedPlayerId(null)
+        setSelectedStaticBallId?.(null)
         setMode?.('option')
+        return
+      }
+      const hitSb = hitTestStaticBall(x, y)
+      if (hitSb) {
+        setSelectedStaticBallId?.(hitSb.id)
+        setSelectedPlayerId(null)
+        setSelectedOptionRouteId?.(null)
+        setMode?.('staticBall')
         return
       }
     }
@@ -951,6 +1123,23 @@ export default function FieldCanvas({
           branches[activeBranchRef.current] = { ...branch, points: [...branch.points, { x: nx, y: ny }] }
           return { ...o, branches }
         }),
+      )
+      return
+    }
+
+    if (modeRef.current === 'staticBall') {
+      const nx = x / CANVAS_W
+      const ny = y / CANVAS_H
+      if (!selectedStaticBallRef.current) {
+        const id = `${Date.now()}-${Math.random()}`
+        const color = PALETTE[nextColorIndexRef.current % PALETTE.length]
+        nextColorIndexRef.current += 1
+        setStaticBalls((prev) => [...prev, { id, x: nx, y: ny, color, lineColor: null, curved: false, route: [], label: '' }])
+        setSelectedStaticBallId?.(id)
+        return
+      }
+      setStaticBalls((prev) =>
+        prev.map((sb) => (sb.id === selectedStaticBallRef.current ? { ...sb, route: [...sb.route, { x: nx, y: ny }] } : sb)),
       )
       return
     }

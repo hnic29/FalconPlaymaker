@@ -59,7 +59,7 @@ export default function PlaybookLibrary() {
   const handleCreatePlay = (data, newFormations, newCategories) => {
     if (newFormations.length !== formations.length) updatePlaybook(playbookId, { formations: newFormations })
     if (newCategories.length !== categories.length) updatePlaybook(playbookId, { categories: newCategories })
-    const id = savePlay({ playbookId, side, players: [], ball: null, optionRoutes: [], ...data })
+    const id = savePlay({ playbookId, side, players: [], ball: null, optionRoutes: [], staticBalls: [], ...data })
     setShowNewModal(false)
     navigate(`/playbooks/${playbookId}/plays/${id}`)
   }
@@ -187,6 +187,7 @@ export default function PlaybookLibrary() {
                     fieldLines={playbook.fieldLines}
                     team={team}
                     optionRoutes={play.optionRoutes}
+                    staticBalls={play.staticBalls}
                   />
                 </div>
                 <div className="px-2 py-1.5">

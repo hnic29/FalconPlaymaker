@@ -6,6 +6,7 @@ import AnimationOverlay from '../components/playdesigner/AnimationOverlay.jsx'
 import BallPanel from '../components/playdesigner/BallPanel.jsx'
 import PlayerToolbar from '../components/playdesigner/PlayerToolbar.jsx'
 import OptionRouteToolbar from '../components/playdesigner/OptionRouteToolbar.jsx'
+import StaticBallToolbar from '../components/playdesigner/StaticBallToolbar.jsx'
 import NewPlayModal from '../components/playbooks/NewPlayModal.jsx'
 
 const MODES = [
@@ -19,6 +20,11 @@ const MODES = [
     key: 'option',
     label: '⑂ Option Route',
     hint: 'Click empty field to drop an option route origin, then click points to draw its first branch. Click an existing origin to select it and add more branches.',
+  },
+  {
+    key: 'staticBall',
+    label: '📍 Static Ball',
+    hint: 'Click empty field to drop a static (non-animated) ball, then click points to draw its pass line. Click an existing one to reselect it.',
   },
   { key: 'erase', label: 'Erase', hint: 'Click a player to remove them.' },
   {
@@ -40,6 +46,8 @@ export default function PlayDesigner() {
   const [optionRoutes, setOptionRoutes] = useState([])
   const [selectedOptionRouteId, setSelectedOptionRouteIdRaw] = useState(null)
   const [activeBranchIndex, setActiveBranchIndex] = useState(0)
+  const [staticBalls, setStaticBalls] = useState([])
+  const [selectedStaticBallId, setSelectedStaticBallId] = useState(null)
   const [mode, setMode] = useState('add')
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -167,6 +175,16 @@ export default function PlayDesigner() {
     setSelectedOptionRouteId(null)
   }
 
+  const selectedStaticBall = staticBalls.find((sb) => sb.id === selectedStaticBallId)
+
+  const updateSelectedStaticBall = (patch) =>
+    setStaticBalls((prev) => prev.map((sb) => (sb.id === selectedStaticBallId ? { ...sb, ...patch } : sb)))
+
+  const handleDeleteStaticBall = () => {
+    setStaticBalls((prev) => prev.filter((sb) => sb.id !== selectedStaticBallId))
+    setSelectedStaticBallId(null)
+  }
+
   const resetAnimation = () => {
     setIsAnimating(false)
     setResetTick((t) => t + 1)
@@ -198,6 +216,7 @@ export default function PlayDesigner() {
       players,
       ball,
       optionRoutes,
+      staticBalls,
     })
     setCurrentPlayId(id)
   }
@@ -207,10 +226,12 @@ export default function PlayDesigner() {
     setPlayers(JSON.parse(JSON.stringify(play.players)))
     setBall(validBall ? JSON.parse(JSON.stringify(play.ball)) : null)
     setOptionRoutes(play.optionRoutes ? JSON.parse(JSON.stringify(play.optionRoutes)) : [])
+    setStaticBalls(play.staticBalls ? JSON.parse(JSON.stringify(play.staticBalls)) : [])
     setPlayName(play.name)
     setCurrentPlayId(play.id)
     setSelectedPlayerId(null)
     setSelectedOptionRouteId(null)
+    setSelectedStaticBallId(null)
     // Player tokens are draggable in every mode now, so there's no dedicated
     // "move" mode to land on - route mode is a safe default since tapping
     // empty space there does nothing unless a player is already selected.
@@ -255,6 +276,7 @@ export default function PlayDesigner() {
       players,
       ball,
       optionRoutes,
+      staticBalls,
     })
     setShowDetailsModal(false)
   }
@@ -306,6 +328,7 @@ export default function PlayDesigner() {
                   setMode(m.key)
                   if (m.key !== 'route') setSelectedPlayerId(null)
                   if (m.key !== 'option') setSelectedOptionRouteId(null)
+                  if (m.key !== 'staticBall') setSelectedStaticBallId(null)
                 }}
                 className={`px-3 py-2.5 rounded text-sm font-semibold ${
                   mode === m.key
@@ -365,6 +388,10 @@ export default function PlayDesigner() {
               selectedOptionRouteId={selectedOptionRouteId}
               setSelectedOptionRouteId={setSelectedOptionRouteId}
               activeBranchIndex={activeBranchIndex}
+              staticBalls={staticBalls}
+              setStaticBalls={setStaticBalls}
+              selectedStaticBallId={selectedStaticBallId}
+              setSelectedStaticBallId={setSelectedStaticBallId}
               isAnimating={isAnimating}
               onAnimationDone={() => setIsAnimating(false)}
               speed={speed}
@@ -413,6 +440,16 @@ export default function PlayDesigner() {
                 onDeleteBranch={handleDeleteBranch}
                 onDeleteOptionRoute={handleDeleteOptionRoute}
                 onDone={() => setSelectedOptionRouteId(null)}
+              />
+            )}
+
+            {selectedStaticBall && (
+              <StaticBallToolbar
+                key={selectedStaticBall.id}
+                staticBall={selectedStaticBall}
+                onUpdate={updateSelectedStaticBall}
+                onDelete={handleDeleteStaticBall}
+                onDone={() => setSelectedStaticBallId(null)}
               />
             )}
           </div>
