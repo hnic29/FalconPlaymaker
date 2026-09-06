@@ -5,6 +5,7 @@ import FieldCanvas from '../components/playdesigner/FieldCanvas.jsx'
 import AnimationOverlay from '../components/playdesigner/AnimationOverlay.jsx'
 import BallPanel from '../components/playdesigner/BallPanel.jsx'
 import PlayerToolbar from '../components/playdesigner/PlayerToolbar.jsx'
+import OptionRouteToolbar from '../components/playdesigner/OptionRouteToolbar.jsx'
 import NewPlayModal from '../components/playbooks/NewPlayModal.jsx'
 
 const MODES = [
@@ -13,6 +14,11 @@ const MODES = [
     key: 'route',
     label: 'Draw Route',
     hint: 'Click a player to select them, then click points to draw their route. Drag existing points to reshape it.',
+  },
+  {
+    key: 'option',
+    label: '⑂ Option Route',
+    hint: 'Click empty field to drop an option route origin, then click points to draw its first branch. Click an existing origin to select it and add more branches.',
   },
   { key: 'erase', label: 'Erase', hint: 'Click a player to remove them.' },
   {
@@ -31,6 +37,9 @@ export default function PlayDesigner() {
   const [playMeta, setPlayMeta] = useState({ formation: '', categories: [], notes: '', side: 'offense' })
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [players, setPlayersRaw] = useState([])
+  const [optionRoutes, setOptionRoutes] = useState([])
+  const [selectedOptionRouteId, setSelectedOptionRouteIdRaw] = useState(null)
+  const [activeBranchIndex, setActiveBranchIndex] = useState(0)
   const [mode, setMode] = useState('add')
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -127,6 +136,36 @@ export default function PlayDesigner() {
   }, [isAnimating])
 
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId)
+  const selectedOptionRoute = optionRoutes.find((o) => o.id === selectedOptionRouteId)
+
+  // Selecting a different option route (or a brand-new one) should always
+  // land on its first branch rather than whatever branch index was active before.
+  const setSelectedOptionRouteId = (id) => {
+    setSelectedOptionRouteIdRaw(id)
+    setActiveBranchIndex(0)
+  }
+
+  const updateSelectedOptionRoute = (patch) =>
+    setOptionRoutes((prev) => prev.map((o) => (o.id === selectedOptionRouteId ? { ...o, ...patch } : o)))
+
+  const handleAddBranch = () => {
+    setOptionRoutes((prev) =>
+      prev.map((o) => (o.id === selectedOptionRouteId ? { ...o, branches: [...o.branches, { points: [] }] } : o)),
+    )
+    setActiveBranchIndex(selectedOptionRoute ? selectedOptionRoute.branches.length : 0)
+  }
+
+  const handleDeleteBranch = (index) => {
+    setOptionRoutes((prev) =>
+      prev.map((o) => (o.id === selectedOptionRouteId ? { ...o, branches: o.branches.filter((_, i) => i !== index) } : o)),
+    )
+    setActiveBranchIndex((i) => Math.max(0, i === index ? i - 1 : i > index ? i - 1 : i))
+  }
+
+  const handleDeleteOptionRoute = () => {
+    setOptionRoutes((prev) => prev.filter((o) => o.id !== selectedOptionRouteId))
+    setSelectedOptionRouteId(null)
+  }
 
   const resetAnimation = () => {
     setIsAnimating(false)
@@ -158,6 +197,7 @@ export default function PlayDesigner() {
       ...playMeta,
       players,
       ball,
+      optionRoutes,
     })
     setCurrentPlayId(id)
   }
@@ -166,9 +206,11 @@ export default function PlayDesigner() {
     const validBall = play.ball && Array.isArray(play.ball.route) && typeof play.ball.x === 'number'
     setPlayers(JSON.parse(JSON.stringify(play.players)))
     setBall(validBall ? JSON.parse(JSON.stringify(play.ball)) : null)
+    setOptionRoutes(play.optionRoutes ? JSON.parse(JSON.stringify(play.optionRoutes)) : [])
     setPlayName(play.name)
     setCurrentPlayId(play.id)
     setSelectedPlayerId(null)
+    setSelectedOptionRouteId(null)
     // Player tokens are draggable in every mode now, so there's no dedicated
     // "move" mode to land on - route mode is a safe default since tapping
     // empty space there does nothing unless a player is already selected.
@@ -212,6 +254,7 @@ export default function PlayDesigner() {
       notes: data.notes,
       players,
       ball,
+      optionRoutes,
     })
     setShowDetailsModal(false)
   }
@@ -262,6 +305,7 @@ export default function PlayDesigner() {
                 onClick={() => {
                   setMode(m.key)
                   if (m.key !== 'route') setSelectedPlayerId(null)
+                  if (m.key !== 'option') setSelectedOptionRouteId(null)
                 }}
                 className={`px-3 py-2.5 rounded text-sm font-semibold ${
                   mode === m.key
@@ -316,6 +360,11 @@ export default function PlayDesigner() {
               playersPerSide={playbook?.playersPerSide || 5}
               selectedPlayerId={selectedPlayerId}
               setSelectedPlayerId={setSelectedPlayerId}
+              optionRoutes={optionRoutes}
+              setOptionRoutes={setOptionRoutes}
+              selectedOptionRouteId={selectedOptionRouteId}
+              setSelectedOptionRouteId={setSelectedOptionRouteId}
+              activeBranchIndex={activeBranchIndex}
               isAnimating={isAnimating}
               onAnimationDone={() => setIsAnimating(false)}
               speed={speed}
@@ -350,6 +399,20 @@ export default function PlayDesigner() {
                   })
                 }
                 onDone={() => setSelectedPlayerId(null)}
+              />
+            )}
+
+            {selectedOptionRoute && (
+              <OptionRouteToolbar
+                key={selectedOptionRoute.id}
+                optionRoute={selectedOptionRoute}
+                activeBranchIndex={activeBranchIndex}
+                onSetActiveBranch={setActiveBranchIndex}
+                onUpdate={updateSelectedOptionRoute}
+                onAddBranch={handleAddBranch}
+                onDeleteBranch={handleDeleteBranch}
+                onDeleteOptionRoute={handleDeleteOptionRoute}
+                onDone={() => setSelectedOptionRouteId(null)}
               />
             )}
           </div>

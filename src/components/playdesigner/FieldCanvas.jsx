@@ -375,10 +375,38 @@ function drawPlayer(ctx, px, py, player, isSelected, points) {
   ctx.fillText(player.number || '', px, py)
 }
 
+const OPTION_ORIGIN_RADIUS = TOKEN_RADIUS * 0.55
+
+// An option route is a standalone field annotation (not tied to a player):
+// a shared origin with one or more independent branch paths fanning out from
+// it, each drawn with the same route-rendering code a player's route uses by
+// wrapping the branch in a lightweight object shaped like a player.
+function branchAsRoutePlayer(opt, branch) {
+  return { x: opt.x, y: opt.y, route: branch.points, color: opt.color, lineColor: opt.lineColor, curved: !!opt.curved }
+}
+
+function drawOptionRoute(ctx, opt, isSelected) {
+  opt.branches.forEach((branch) => {
+    const virtual = branchAsRoutePlayer(opt, branch)
+    const points = renderPathPoints(virtual)
+    if (points.length > 1) drawRoute(ctx, virtual)
+  })
+
+  const ox = opt.x * CANVAS_W
+  const oy = opt.y * CANVAS_H
+  ctx.beginPath()
+  ctx.arc(ox, oy, OPTION_ORIGIN_RADIUS, 0, Math.PI * 2)
+  ctx.fillStyle = '#0b1f3f'
+  ctx.fill()
+  ctx.lineWidth = isSelected ? 3 : 2
+  ctx.strokeStyle = opt.lineColor || opt.color
+  ctx.stroke()
+}
+
 // Renders a play at an arbitrary size (e.g. a small library card) by scaling
 // into the same CANVAS_W x CANVAS_H coordinate space the full editor uses, so
 // thumbnails stay pixel-faithful to what the play actually looks like.
-export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', team) {
+export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', team, optionRoutes = []) {
   ctx.save()
   ctx.clearRect(0, 0, w, h)
   ctx.scale(w / CANVAS_W, h / CANVAS_H)
@@ -390,6 +418,8 @@ export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', t
     const points = renderPathPoints(player)
     drawPlayer(ctx, px, py, player, false, points)
   })
+
+  optionRoutes.forEach((opt) => drawOptionRoute(ctx, opt, false))
 
   if (ball) {
     const ballPoints = renderPathPoints(ball)
@@ -422,6 +452,11 @@ export default function FieldCanvas({
   playersPerSide = 5,
   selectedPlayerId,
   setSelectedPlayerId,
+  optionRoutes = [],
+  setOptionRoutes,
+  selectedOptionRouteId,
+  setSelectedOptionRouteId,
+  activeBranchIndex = 0,
   isAnimating,
   onAnimationDone,
   speed,
@@ -432,13 +467,18 @@ export default function FieldCanvas({
   const canvasRef = useRef(null)
   const playersRef = useRef(players)
   const ballRef = useRef(ball)
+  const optionRoutesRef = useRef(optionRoutes)
   const modeRef = useRef(mode)
   const selectedRef = useRef(selectedPlayerId)
+  const selectedOptionRef = useRef(selectedOptionRouteId)
+  const activeBranchRef = useRef(activeBranchIndex)
   const elapsedRef = useRef(0)
   const rafRef = useRef(null)
   const lastTimeRef = useRef(null)
   const draggingIdRef = useRef(null)
   const draggingRoutePointRef = useRef(null)
+  const draggingOptionIdRef = useRef(null)
+  const draggingBranchPointRef = useRef(null)
   const draggingBallOriginRef = useRef(false)
   const draggingBallPointRef = useRef(null)
   const didDragRef = useRef(false)
@@ -451,11 +491,20 @@ export default function FieldCanvas({
     ballRef.current = ball
   }, [ball])
   useEffect(() => {
+    optionRoutesRef.current = optionRoutes
+  }, [optionRoutes])
+  useEffect(() => {
     modeRef.current = mode
   }, [mode])
   useEffect(() => {
     selectedRef.current = selectedPlayerId
   }, [selectedPlayerId])
+  useEffect(() => {
+    selectedOptionRef.current = selectedOptionRouteId
+  }, [selectedOptionRouteId])
+  useEffect(() => {
+    activeBranchRef.current = activeBranchIndex
+  }, [activeBranchIndex])
 
   function draw() {
     const canvas = canvasRef.current
@@ -477,6 +526,28 @@ export default function FieldCanvas({
       }
       drawPlayer(ctx, px, py, player, player.id === selectedRef.current, points)
     })
+
+    optionRoutesRef.current.forEach((opt) => {
+      drawOptionRoute(ctx, opt, opt.id === selectedOptionRef.current)
+    })
+
+    if (modeRef.current === 'option' && elapsed === 0) {
+      const selectedOpt = optionRoutesRef.current.find((o) => o.id === selectedOptionRef.current)
+      const branch = selectedOpt?.branches[activeBranchRef.current]
+      if (branch) {
+        branch.points.forEach((pt) => {
+          const hx = pt.x * CANVAS_W
+          const hy = pt.y * CANVAS_H
+          ctx.beginPath()
+          ctx.arc(hx, hy, HANDLE_RADIUS, 0, Math.PI * 2)
+          ctx.fillStyle = '#ffffff'
+          ctx.fill()
+          ctx.lineWidth = 2
+          ctx.strokeStyle = selectedOpt.lineColor || selectedOpt.color
+          ctx.stroke()
+        })
+      }
+    }
 
     if (ball) {
       const ballPoints = renderPathPoints(ball)
@@ -534,7 +605,7 @@ export default function FieldCanvas({
 
   useEffect(() => {
     draw()
-  }, [players, selectedPlayerId, speed, ball, fieldLines, team])
+  }, [players, selectedPlayerId, speed, ball, fieldLines, team, optionRoutes, selectedOptionRouteId, activeBranchIndex, mode])
 
   useEffect(() => {
     elapsedRef.current = 0
@@ -596,6 +667,20 @@ export default function FieldCanvas({
     return Math.hypot(entity.x * CANVAS_W - x, entity.y * CANVAS_H - y) <= TOKEN_RADIUS
   }
 
+  function hitTestOptionRoute(x, y) {
+    return optionRoutesRef.current.find((o) => Math.hypot(o.x * CANVAS_W - x, o.y * CANVAS_H - y) <= OPTION_ORIGIN_RADIUS + 6)
+  }
+
+  function hitTestBranchPoint(opt, branchIndex, x, y) {
+    const points = opt?.branches[branchIndex]?.points
+    if (!points) return null
+    for (let i = 0; i < points.length; i++) {
+      const pt = points[i]
+      if (Math.hypot(pt.x * CANVAS_W - x, pt.y * CANVAS_H - y) <= HANDLE_HIT_RADIUS) return i
+    }
+    return null
+  }
+
   function handlePointerDown(e) {
     if (isAnimating) return
     didDragRef.current = false
@@ -616,6 +701,15 @@ export default function FieldCanvas({
         return
       }
     }
+    if (modeRef.current === 'option' && selectedOptionRef.current) {
+      const selectedOpt = optionRoutesRef.current.find((o) => o.id === selectedOptionRef.current)
+      const idx = hitTestBranchPoint(selectedOpt, activeBranchRef.current, x, y)
+      if (idx !== null) {
+        capture()
+        draggingBranchPointRef.current = { optionId: selectedOpt.id, branchIndex: activeBranchRef.current, index: idx }
+        return
+      }
+    }
     if (modeRef.current === 'ball' && ballRef.current) {
       const idx = hitTestRoutePoint(ballRef.current, x, y)
       if (idx !== null) {
@@ -631,12 +725,19 @@ export default function FieldCanvas({
     }
 
     // Dragging a player token repositions it in every mode - no need to
-    // switch to a dedicated "move" tool first.
+    // switch to a dedicated "move" tool first. Option route origins work the
+    // same way.
     const hitPlayer = hitTest(x, y)
     if (hitPlayer) {
       capture()
       onDragStart?.()
       draggingIdRef.current = hitPlayer.id
+      return
+    }
+    const hitOpt = hitTestOptionRoute(x, y)
+    if (hitOpt) {
+      capture()
+      draggingOptionIdRef.current = hitOpt.id
     }
   }
 
@@ -676,6 +777,48 @@ export default function FieldCanvas({
       )
       return
     }
+    if (draggingOptionIdRef.current) {
+      const { x, y } = toCanvasCoords(e)
+      const nx = Math.min(1, Math.max(0, x / CANVAS_W))
+      const ny = Math.min(1, Math.max(0, y / CANVAS_H))
+      didDragRef.current = true
+      setOptionRoutes(
+        (prev) =>
+          prev.map((o) => {
+            if (o.id !== draggingOptionIdRef.current) return o
+            const dx = nx - o.x
+            const dy = ny - o.y
+            return {
+              ...o,
+              x: nx,
+              y: ny,
+              branches: o.branches.map((b) => ({ ...b, points: b.points.map((pt) => ({ ...pt, x: pt.x + dx, y: pt.y + dy })) })),
+            }
+          }),
+        { transient: true },
+      )
+      return
+    }
+    if (draggingBranchPointRef.current && modeRef.current === 'option') {
+      const { x, y } = toCanvasCoords(e)
+      const nx = Math.min(1, Math.max(0, x / CANVAS_W))
+      const ny = Math.min(1, Math.max(0, y / CANVAS_H))
+      const { optionId, branchIndex, index } = draggingBranchPointRef.current
+      didDragRef.current = true
+      setOptionRoutes(
+        (prev) =>
+          prev.map((o) => {
+            if (o.id !== optionId) return o
+            const branches = o.branches.slice()
+            const points = branches[branchIndex].points.slice()
+            points[index] = { ...points[index], x: nx, y: ny }
+            branches[branchIndex] = { ...branches[branchIndex], points }
+            return { ...o, branches }
+          }),
+        { transient: true },
+      )
+      return
+    }
     if (draggingBallOriginRef.current && modeRef.current === 'ball') {
       const { x, y } = toCanvasCoords(e)
       const nx = Math.min(1, Math.max(0, x / CANVAS_W))
@@ -700,12 +843,17 @@ export default function FieldCanvas({
   }
 
   function handlePointerUp() {
-    const wasDragging = draggingIdRef.current != null || draggingRoutePointRef.current != null
+    // Only player/route drags go through the shared undo-history callbacks;
+    // option routes don't participate in that history stack, so dragging one
+    // must not fire onDragStart/onDragEnd (that would desync the stack).
+    const wasDraggingWithHistory = draggingIdRef.current != null || draggingRoutePointRef.current != null
     draggingBallOriginRef.current = false
     draggingBallPointRef.current = null
     draggingIdRef.current = null
     draggingRoutePointRef.current = null
-    if (wasDragging) onDragEnd?.({ discard: !didDragRef.current })
+    draggingOptionIdRef.current = null
+    draggingBranchPointRef.current = null
+    if (wasDraggingWithHistory) onDragEnd?.({ discard: !didDragRef.current })
   }
 
   function handleClick(e) {
@@ -722,8 +870,19 @@ export default function FieldCanvas({
     // player is an explicit delete, not a selection.
     if (hit && modeRef.current !== 'erase') {
       setSelectedPlayerId(hit.id)
+      setSelectedOptionRouteId?.(null)
       setMode?.('route')
       return
+    }
+
+    if (modeRef.current !== 'erase') {
+      const hitOpt = hitTestOptionRoute(x, y)
+      if (hitOpt) {
+        setSelectedOptionRouteId?.(hitOpt.id)
+        setSelectedPlayerId(null)
+        setMode?.('option')
+        return
+      }
     }
 
     if (modeRef.current === 'add') {
@@ -770,6 +929,29 @@ export default function FieldCanvas({
           prev.map((p) => (p.id === selectedRef.current ? { ...p, route: [...p.route, { x: nx, y: ny }] } : p)),
         )
       }
+      return
+    }
+
+    if (modeRef.current === 'option') {
+      const nx = x / CANVAS_W
+      const ny = y / CANVAS_H
+      if (!selectedOptionRef.current) {
+        const id = `${Date.now()}-${Math.random()}`
+        const color = PALETTE[nextColorIndexRef.current % PALETTE.length]
+        nextColorIndexRef.current += 1
+        setOptionRoutes((prev) => [...prev, { id, x: nx, y: ny, color, lineColor: null, curved: false, branches: [{ points: [] }] }])
+        setSelectedOptionRouteId?.(id)
+        return
+      }
+      setOptionRoutes((prev) =>
+        prev.map((o) => {
+          if (o.id !== selectedOptionRef.current) return o
+          const branches = o.branches.slice()
+          const branch = branches[activeBranchRef.current]
+          branches[activeBranchRef.current] = { ...branch, points: [...branch.points, { x: nx, y: ny }] }
+          return { ...o, branches }
+        }),
+      )
       return
     }
 

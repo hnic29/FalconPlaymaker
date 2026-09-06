@@ -59,7 +59,7 @@ export default function PlaybookLibrary() {
   const handleCreatePlay = (data, newFormations, newCategories) => {
     if (newFormations.length !== formations.length) updatePlaybook(playbookId, { formations: newFormations })
     if (newCategories.length !== categories.length) updatePlaybook(playbookId, { categories: newCategories })
-    const id = savePlay({ playbookId, side, players: [], ball: null, ...data })
+    const id = savePlay({ playbookId, side, players: [], ball: null, optionRoutes: [], ...data })
     setShowNewModal(false)
     navigate(`/playbooks/${playbookId}/plays/${id}`)
   }
@@ -181,7 +181,13 @@ export default function PlaybookLibrary() {
             <div key={play.id} className="rounded-lg border border-navy-700 bg-navy-900 overflow-hidden group relative">
               <button onClick={() => navigate(`/playbooks/${playbookId}/plays/${play.id}`)} className="block w-full text-left">
                 <div className="aspect-[4/3] bg-navy-950">
-                  <PlayThumbnail players={play.players} ball={play.ball} fieldLines={playbook.fieldLines} team={team} />
+                  <PlayThumbnail
+                    players={play.players}
+                    ball={play.ball}
+                    fieldLines={playbook.fieldLines}
+                    team={team}
+                    optionRoutes={play.optionRoutes}
+                  />
                 </div>
                 <div className="px-2 py-1.5">
                   <p className="text-[10px] text-slate-500 uppercase truncate">{play.formation || 'No formation'}</p>
