@@ -1,8 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadState, saveState } from './storage.js'
 
+// storage.js only touches the global `localStorage`, so a minimal in-memory
+// stand-in is enough - no need to pull in a full DOM environment like jsdom
+// just for this one API (which has also proven flaky across platforms in CI).
+function createMemoryLocalStorage() {
+  let store = new Map()
+  return {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+    removeItem: (key) => store.delete(key),
+    clear: () => store.clear(),
+  }
+}
+
 beforeEach(() => {
-  localStorage.clear()
+  globalThis.localStorage = createMemoryLocalStorage()
 })
 
 describe('loadState / saveState', () => {
