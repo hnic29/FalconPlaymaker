@@ -4,6 +4,7 @@ import { getPositionLabel } from '../../utils/positionLabels.js'
 
 export const CANVAS_W = 562
 export const CANVAS_H = 1000
+export const PALETTE = ['#facc15', '#ffffff', '#38bdf8', '#fb923c', '#f472b6', '#a3e635', '#e2e8f0', '#fca5a5']
 const TOKEN_RADIUS = 24
 const HANDLE_RADIUS = 10
 const HANDLE_HIT_RADIUS = 22
@@ -194,9 +195,48 @@ function drawEndCap(ctx, last, prev, color, style) {
   }
 }
 
+const SEGMENT_DASH = { solid: [], dashed: [8, 6], dotted: [2, 5] }
+
+// True's "Advanced Play Diagram" lets each route segment carry its own line
+// style and end cap (player.route[i].style / .endCap). Plays that never touch
+// that panel have no such per-point overrides, so they fall through to the
+// original whole-route rendering (curved smoothing, pre-snap zigzag on the
+// first leg, dotted pitch/pass on the last leg, one end cap for the route).
+function drawRouteAdvanced(ctx, rawPoints, player, color) {
+  for (let i = 0; i < rawPoints.length - 1; i++) {
+    const a = rawPoints[i]
+    const b = rawPoints[i + 1]
+    const routePt = player.route[i]
+    const style = routePt?.style || 'dashed'
+    ctx.strokeStyle = color
+    ctx.lineWidth = 3
+    if (style === 'zigzag') {
+      ctx.setLineDash([])
+      drawZigzag(ctx, a, b, color)
+    } else {
+      ctx.beginPath()
+      ctx.setLineDash(SEGMENT_DASH[style] ?? SEGMENT_DASH.dashed)
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+    }
+    ctx.setLineDash([])
+    if (routePt?.endCap && routePt.endCap !== 'none') {
+      drawEndCap(ctx, b, a, color, routePt.endCap)
+    }
+  }
+}
+
 function drawRoute(ctx, player) {
   const rawPoints = pathPixelPoints(player)
   if (rawPoints.length < 2) return
+  const color = player.lineColor || player.color
+
+  if (player.route.some((p) => p.style || p.endCap)) {
+    drawRouteAdvanced(ctx, rawPoints, player, color)
+    return
+  }
+
   const n = rawPoints.length - 1
   const preSnap = !!player.preSnapMotion && n >= 1
   const pitch = !!player.pitchEnd && n >= 1 && !(preSnap && n === 1)
@@ -206,15 +246,15 @@ function drawRoute(ctx, player) {
   const midPoints = player.curved ? catmullRomPoints(midRaw) : midRaw
 
   ctx.lineWidth = 3
-  ctx.strokeStyle = player.color
+  ctx.strokeStyle = color
   ctx.setLineDash([8, 6])
 
-  if (preSnap) drawZigzag(ctx, rawPoints[0], rawPoints[1], player.color)
+  if (preSnap) drawZigzag(ctx, rawPoints[0], rawPoints[1], color)
 
   if (midPoints.length > 1) {
     ctx.beginPath()
     ctx.setLineDash([8, 6])
-    ctx.strokeStyle = player.color
+    ctx.strokeStyle = color
     ctx.lineWidth = 3
     ctx.moveTo(midPoints[0].x, midPoints[0].y)
     for (let i = 1; i < midPoints.length; i++) ctx.lineTo(midPoints[i].x, midPoints[i].y)
@@ -228,7 +268,7 @@ function drawRoute(ctx, player) {
     const b = rawPoints[rawPoints.length - 1]
     ctx.beginPath()
     ctx.setLineDash([3, 5])
-    ctx.strokeStyle = player.color
+    ctx.strokeStyle = color
     ctx.lineWidth = 3
     ctx.moveTo(a.x, a.y)
     ctx.lineTo(b.x, b.y)
@@ -244,7 +284,66 @@ function drawRoute(ctx, player) {
   }
   ctx.setLineDash([])
 
-  if (lastSegA && lastSegB) drawEndCap(ctx, lastSegB, lastSegA, player.color, player.endCap || 'arrow')
+  if (lastSegA && lastSegB) drawEndCap(ctx, lastSegB, lastSegA, color, player.endCap || 'arrow')
+}
+
+// True's "Advanced Play Diagram" lets each position icon show a shading
+// pattern (a solid fill, a partial pie fill, diagonal stripes, or hollow)
+// instead of always being a flat-filled token.
+function fillTokenShading(ctx, px, py, radius, player) {
+  const shading = player.shading || 'solid'
+  const color = player.color
+
+  if (shading === 'hollow') {
+    ctx.fillStyle = '#0b1f3f'
+    ctx.fill()
+    return
+  }
+
+  if (shading === 'striped') {
+    ctx.save()
+    ctx.clip()
+    ctx.fillStyle = color
+    ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2)
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'
+    ctx.lineWidth = 3
+    for (let d = -radius * 2; d < radius * 2; d += 7) {
+      ctx.beginPath()
+      ctx.moveTo(px - radius + d, py - radius)
+      ctx.lineTo(px - radius + d + radius * 2, py + radius)
+      ctx.stroke()
+    }
+    ctx.restore()
+    return
+  }
+
+  const fraction = { 75: 0.75, 50: 0.5, 25: 0.25 }[shading]
+  if (fraction) {
+    ctx.save()
+    ctx.clip()
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'
+    ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2)
+    ctx.beginPath()
+    ctx.moveTo(px, py)
+    ctx.arc(px, py, radius, -Math.PI / 2, -Math.PI / 2 + fraction * Math.PI * 2)
+    ctx.closePath()
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.restore()
+    return
+  }
+
+  ctx.fillStyle = color
+  ctx.fill()
+}
+
+function pathTokenShape(ctx, px, py, isCenter) {
+  if (isCenter) {
+    drawSquare(ctx, px, py, TOKEN_RADIUS * 0.9)
+  } else {
+    ctx.beginPath()
+    ctx.arc(px, py, TOKEN_RADIUS, 0, Math.PI * 2)
+  }
 }
 
 function drawPlayer(ctx, px, py, player, isSelected, points) {
@@ -252,14 +351,9 @@ function drawPlayer(ctx, px, py, player, isSelected, points) {
 
   const isCenter = (player.label || '').trim().toUpperCase() === 'C'
 
-  if (isCenter) {
-    drawSquare(ctx, px, py, TOKEN_RADIUS * 0.9)
-  } else {
-    ctx.beginPath()
-    ctx.arc(px, py, TOKEN_RADIUS, 0, Math.PI * 2)
-  }
-  ctx.fillStyle = player.color
-  ctx.fill()
+  pathTokenShape(ctx, px, py, isCenter)
+  fillTokenShading(ctx, px, py, isCenter ? TOKEN_RADIUS * 0.9 : TOKEN_RADIUS, player)
+  pathTokenShape(ctx, px, py, isCenter)
   ctx.lineWidth = isSelected ? 3 : 1.5
   ctx.strokeStyle = isSelected ? '#ffffff' : '#0b1f3f'
   ctx.stroke()
@@ -349,8 +443,6 @@ export default function FieldCanvas({
   const didDragRef = useRef(false)
   const nextColorIndexRef = useRef(players.length)
 
-  const PALETTE = ['#facc15', '#ffffff', '#38bdf8', '#fb923c', '#f472b6', '#a3e635', '#e2e8f0', '#fca5a5']
-
   useEffect(() => {
     playersRef.current = players
   }, [players])
@@ -432,7 +524,7 @@ export default function FieldCanvas({
           ctx.fillStyle = '#ffffff'
           ctx.fill()
           ctx.lineWidth = 2
-          ctx.strokeStyle = selectedPlayer.color
+          ctx.strokeStyle = selectedPlayer.lineColor || selectedPlayer.color
           ctx.stroke()
         })
       }
@@ -632,6 +724,8 @@ export default function FieldCanvas({
           number: label,
           label,
           color,
+          lineColor: null,
+          shading: 'solid',
           x: x / CANVAS_W,
           y: y / CANVAS_H,
           route: [],

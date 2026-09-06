@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react'
+import { PALETTE } from './FieldCanvas.jsx'
+import { LINE_STYLES, SEGMENT_END_CAPS, SHADING_OPTIONS } from '../../utils/advancedStyles.js'
 
 const END_CAPS = [
   { key: 'arrow', label: '➤ Arrow' },
   { key: 't', label: '⊤ Block' },
   { key: 'dot', label: '● Dot' },
 ]
+
+function shadingPreviewStyle(key, color) {
+  if (key === 'hollow') return { background: 'transparent', border: `2px solid ${color}` }
+  if (key === 'striped') {
+    return { background: `repeating-linear-gradient(45deg, ${color}, ${color} 3px, transparent 3px, transparent 6px)` }
+  }
+  const fraction = { solid: 100, 75: 75, 50: 50, 25: 25 }[key] ?? 100
+  return { background: `conic-gradient(${color} ${fraction}%, rgba(255,255,255,0.25) ${fraction}% 100%)` }
+}
 
 export default function PlayerToolbar({ player, onUpdate, onSetCenter, onDone }) {
   const [pos, setPos] = useState({ x: 12, y: 60 })
@@ -14,6 +25,8 @@ export default function PlayerToolbar({ player, onUpdate, onSetCenter, onDone })
   // On phones, start collapsed to a slim header so the field stays tappable for
   // route points right after selecting a player; expand on demand to style the route.
   const [expanded, setExpanded] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [advancedTab, setAdvancedTab] = useState('symbol')
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)')
@@ -40,6 +53,9 @@ export default function PlayerToolbar({ player, onUpdate, onSetCenter, onDone })
   }
 
   const isCenter = player.label.trim().toUpperCase() === 'C'
+
+  const setSegment = (index, patch) =>
+    onUpdate({ route: player.route.map((pt, i) => (i === index ? { ...pt, ...patch } : pt)) })
 
   return (
     <div
@@ -161,6 +177,125 @@ export default function PlayerToolbar({ player, onUpdate, onSetCenter, onDone })
             </button>
           ))}
         </div>
+
+        <button
+          onClick={() => setShowAdvanced((s) => !s)}
+          className="w-full mb-2 px-2 py-2.5 rounded text-xs font-bold bg-navy-950 border border-navy-700 text-gold-400 hover:text-gold-300"
+        >
+          {showAdvanced ? '▾ Hide advanced tools' : '▸ Advanced tools'}
+        </button>
+
+        {showAdvanced && (
+          <div className="mb-3 rounded border border-navy-700 bg-navy-950/60 p-2.5">
+            <div className="flex rounded overflow-hidden mb-2.5 border border-navy-700">
+              <button
+                onClick={() => setAdvancedTab('symbol')}
+                className={`flex-1 py-2 text-xs font-bold ${advancedTab === 'symbol' ? 'bg-gold-500 text-navy-950' : 'bg-navy-900 text-slate-300'}`}
+              >
+                Symbol
+              </button>
+              <button
+                onClick={() => setAdvancedTab('segments')}
+                className={`flex-1 py-2 text-xs font-bold ${advancedTab === 'segments' ? 'bg-gold-500 text-navy-950' : 'bg-navy-900 text-slate-300'}`}
+              >
+                Segments
+              </button>
+            </div>
+
+            {advancedTab === 'symbol' ? (
+              <>
+                <p className="text-[11px] font-bold uppercase text-slate-400 mb-1.5">Icon Color</p>
+                <div className="grid grid-cols-8 gap-1.5 mb-3">
+                  {PALETTE.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => onUpdate({ color: c })}
+                      title={c}
+                      className={`aspect-square rounded ${player.color === c ? 'ring-2 ring-white' : ''}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+
+                <p className="text-[11px] font-bold uppercase text-slate-400 mb-1.5">Line Color</p>
+                <div className="grid grid-cols-8 gap-1.5 mb-1.5">
+                  {PALETTE.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => onUpdate({ lineColor: c })}
+                      title={c}
+                      className={`aspect-square rounded ${player.lineColor === c ? 'ring-2 ring-white' : ''}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => onUpdate({ lineColor: null })}
+                  className={`w-full mb-3 py-2 rounded text-[11px] font-bold ${
+                    !player.lineColor ? 'bg-gold-500 text-navy-950' : 'bg-navy-900 border border-navy-700 text-slate-300'
+                  }`}
+                >
+                  Match icon color
+                </button>
+
+                <p className="text-[11px] font-bold uppercase text-slate-400 mb-1.5">Icon Shading</p>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {SHADING_OPTIONS.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => onUpdate({ shading: s.key })}
+                      title={s.label}
+                      className={`aspect-square rounded-full ${
+                        (player.shading || 'solid') === s.key ? 'ring-2 ring-white' : 'ring-1 ring-navy-700'
+                      }`}
+                      style={shadingPreviewStyle(s.key, player.color)}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : player.route.length === 0 ? (
+              <p className="text-xs text-slate-500">Draw a route first, then style each segment here.</p>
+            ) : (
+              <ul className="space-y-2.5 max-h-64 overflow-y-auto">
+                {player.route.map((pt, i) => (
+                  <li key={i} className="border-b border-navy-800 pb-2 last:border-0">
+                    <p className="text-[11px] font-bold text-slate-400 mb-1">Segment {i + 1}</p>
+                    <div className="flex gap-1 mb-1">
+                      {LINE_STYLES.map((s) => (
+                        <button
+                          key={s.key}
+                          onClick={() => setSegment(i, { style: s.key })}
+                          className={`flex-1 py-2 rounded text-[11px] font-bold ${
+                            (pt.style || 'dashed') === s.key
+                              ? 'bg-gold-500 text-navy-950'
+                              : 'bg-navy-900 border border-navy-700 text-slate-400'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1">
+                      {SEGMENT_END_CAPS.map((c) => (
+                        <button
+                          key={c.key}
+                          onClick={() => setSegment(i, { endCap: c.key })}
+                          className={`flex-1 py-2 rounded text-[10px] font-bold ${
+                            (pt.endCap || 'none') === c.key
+                              ? 'bg-gold-500 text-navy-950'
+                              : 'bg-navy-900 border border-navy-700 text-slate-400'
+                          }`}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <button
