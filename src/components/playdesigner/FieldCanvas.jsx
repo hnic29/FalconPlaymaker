@@ -415,6 +415,7 @@ export default function FieldCanvas({
   onDragStart,
   onDragEnd,
   mode,
+  setMode,
   fieldLines = '53.3',
   team,
   positionSide = 'offense',
@@ -602,15 +603,9 @@ export default function FieldCanvas({
     // Explicitly capture the pointer once a drag starts so a fast finger swipe
     // that briefly leaves the canvas bounds doesn't drop the touch/mouse drag.
     const capture = () => e.target.setPointerCapture?.(e.pointerId)
-    if (modeRef.current === 'move') {
-      const hit = hitTest(x, y)
-      if (hit) {
-        capture()
-        onDragStart?.()
-        draggingIdRef.current = hit.id
-      }
-      return
-    }
+
+    // Route waypoints take priority over the player token itself in route
+    // mode, since they're smaller targets that would otherwise be hard to grab.
     if (modeRef.current === 'route' && selectedRef.current) {
       const selectedPlayer = playersRef.current.find((p) => p.id === selectedRef.current)
       const idx = hitTestRoutePoint(selectedPlayer, x, y)
@@ -618,8 +613,8 @@ export default function FieldCanvas({
         capture()
         onDragStart?.()
         draggingRoutePointRef.current = { playerId: selectedPlayer.id, index: idx }
+        return
       }
-      return
     }
     if (modeRef.current === 'ball' && ballRef.current) {
       const idx = hitTestRoutePoint(ballRef.current, x, y)
@@ -631,12 +626,22 @@ export default function FieldCanvas({
       if (hitTestEntity(ballRef.current, x, y)) {
         capture()
         draggingBallOriginRef.current = true
+        return
       }
+    }
+
+    // Dragging a player token repositions it in every mode - no need to
+    // switch to a dedicated "move" tool first.
+    const hitPlayer = hitTest(x, y)
+    if (hitPlayer) {
+      capture()
+      onDragStart?.()
+      draggingIdRef.current = hitPlayer.id
     }
   }
 
   function handlePointerMove(e) {
-    if (draggingIdRef.current && modeRef.current === 'move') {
+    if (draggingIdRef.current) {
       const { x, y } = toCanvasCoords(e)
       const nx = Math.min(1, Math.max(0, x / CANVAS_W))
       const ny = Math.min(1, Math.max(0, y / CANVAS_H))
@@ -712,8 +717,16 @@ export default function FieldCanvas({
     const { x, y } = toCanvasCoords(e)
     const hit = hitTest(x, y)
 
+    // Tapping any player token selects it and opens the route editor for it,
+    // regardless of which tool is active - except Erase, where a tap on a
+    // player is an explicit delete, not a selection.
+    if (hit && modeRef.current !== 'erase') {
+      setSelectedPlayerId(hit.id)
+      setMode?.('route')
+      return
+    }
+
     if (modeRef.current === 'add') {
-      if (hit) return
       const label = getPositionLabel(playersRef.current.length, positionSide, playersPerSide)
       const color = PALETTE[nextColorIndexRef.current % PALETTE.length]
       nextColorIndexRef.current += 1
@@ -750,10 +763,6 @@ export default function FieldCanvas({
     }
 
     if (modeRef.current === 'route') {
-      if (hit) {
-        setSelectedPlayerId(hit.id)
-        return
-      }
       if (selectedRef.current) {
         const nx = x / CANVAS_W
         const ny = y / CANVAS_H

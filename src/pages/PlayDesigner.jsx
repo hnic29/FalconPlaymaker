@@ -8,9 +8,12 @@ import PlayerToolbar from '../components/playdesigner/PlayerToolbar.jsx'
 import NewPlayModal from '../components/playbooks/NewPlayModal.jsx'
 
 const MODES = [
-  { key: 'add', label: 'Add Player', hint: 'Click the field to place a player.' },
-  { key: 'route', label: 'Draw Route', hint: 'Click a player, then click points to draw their route. Drag existing points to reshape it.' },
-  { key: 'move', label: 'Move Player', hint: 'Drag a player token to reposition it.' },
+  { key: 'add', label: 'Add Player', hint: 'Click the field to place a player. Drag any player token to reposition it any time.' },
+  {
+    key: 'route',
+    label: 'Draw Route',
+    hint: 'Click a player to select them, then click points to draw their route. Drag existing points to reshape it.',
+  },
   { key: 'erase', label: 'Erase', hint: 'Click a player to remove them.' },
   {
     key: 'ball',
@@ -166,7 +169,10 @@ export default function PlayDesigner() {
     setPlayName(play.name)
     setCurrentPlayId(play.id)
     setSelectedPlayerId(null)
-    setMode('move')
+    // Player tokens are draggable in every mode now, so there's no dedicated
+    // "move" mode to land on - route mode is a safe default since tapping
+    // empty space there does nothing unless a player is already selected.
+    setMode('route')
     resetAnimation()
     resetHistory()
   }
@@ -303,6 +309,7 @@ export default function PlayDesigner() {
               onDragStart={beginTransientChange}
               onDragEnd={endTransientChange}
               mode={mode}
+              setMode={setMode}
               fieldLines={playbook?.fieldLines || '53.3'}
               team={team}
               positionSide={playMeta.side || 'offense'}
