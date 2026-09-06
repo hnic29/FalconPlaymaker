@@ -6,12 +6,16 @@ function createFakeCtx() {
     fillStyle: '',
     strokeStyle: '',
     lineWidth: 0,
+    font: '',
+    textAlign: '',
+    textBaseline: '',
     fillRect: vi.fn(),
     strokeRect: vi.fn(),
     beginPath: vi.fn(),
     moveTo: vi.fn(),
     lineTo: vi.fn(),
     stroke: vi.fn(),
+    fillText: vi.fn(),
   }
 }
 
@@ -72,5 +76,25 @@ describe('drawFieldLines', () => {
     // and they shouldn't be using each other's inset
     expect(calledWithXNear(ctxCollege.moveTo, W * 0.38)).toBe(false)
     expect(calledWithXNear(ctxPro.moveTo, W * 0.29)).toBe(false)
+  })
+
+  it('labels every 10 yards on both sidelines in real football numbering (10..50..10)', () => {
+    const ctx = createFakeCtx()
+    drawFieldLines(ctx, W, H, '53.3')
+    const numbersDrawn = ctx.fillText.mock.calls.map(([text]) => text)
+    expect(numbersDrawn).toEqual(['10', '10', '20', '20', '30', '30', '40', '40', '50', '50', '40', '40', '30', '30', '20', '20', '10', '10'])
+  })
+
+  it('still labels every 10 yards even when drawing the finer 5-yard-line ticks', () => {
+    const ctx = createFakeCtx()
+    drawFieldLines(ctx, W, H, '5yard')
+    const numbersDrawn = ctx.fillText.mock.calls.map(([text]) => text)
+    expect(numbersDrawn).toEqual(['10', '10', '20', '20', '30', '30', '40', '40', '50', '50', '40', '40', '30', '30', '20', '20', '10', '10'])
+  })
+
+  it('does not draw yard numbers on a blank ("none") field', () => {
+    const ctx = createFakeCtx()
+    drawFieldLines(ctx, W, H, 'none')
+    expect(ctx.fillText).not.toHaveBeenCalled()
   })
 })

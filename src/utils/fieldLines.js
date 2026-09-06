@@ -42,6 +42,21 @@ export function drawFieldLines(ctx, w, h, fieldLines) {
     ctx.stroke()
   }
 
+  // Yard-number labels every 10 yards (10, 20, 30, 40, 50, 40, 30, 20, 10),
+  // printed near both sidelines like a real field. Shown regardless of line
+  // density so "5 Yard Lines" still reads at a glance instead of just ticks.
+  ctx.font = `bold ${Math.max(8, Math.round(w * 0.045))}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+  const numberInset = w * 0.12
+  for (let i = 1; i < 10; i++) {
+    const y = ezHeight + (playHeight * i) / 10
+    const yardMark = (i <= 5 ? i : 10 - i) * 10
+    ctx.fillText(String(yardMark), numberInset, y)
+    ctx.fillText(String(yardMark), w - numberInset, y)
+  }
+
   if (fieldLines === 'collegeHash' || fieldLines === '53.3') {
     const inset = fieldLines === 'collegeHash' ? w * 0.29 : w * 0.38
     ctx.strokeStyle = 'rgba(255,255,255,0.7)'
