@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { drawFieldLines } from '../../utils/fieldLines.js'
+import { getPositionLabel } from '../../utils/positionLabels.js'
 
 export const CANVAS_W = 562
 export const CANVAS_H = 1000
@@ -12,36 +14,18 @@ function tierMultiplier(player) {
   return SPEED_TIERS[player.speedTier] ?? 1
 }
 
-function drawField(ctx) {
-  ctx.fillStyle = '#2f7a3d'
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
+function drawField(ctx, fieldLines) {
+  drawFieldLines(ctx, CANVAS_W, CANVAS_H, fieldLines)
+
+  if (fieldLines === 'none') return
 
   const ezHeight = CANVAS_H * 0.1
-  ctx.fillStyle = 'rgba(11, 31, 63, 0.85)'
-  ctx.fillRect(0, 0, CANVAS_W, ezHeight)
-  ctx.fillRect(0, CANVAS_H - ezHeight, CANVAS_W, ezHeight)
-
   ctx.fillStyle = '#facc15'
   ctx.font = 'bold 20px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText('END ZONE', CANVAS_W / 2, ezHeight / 2)
   ctx.fillText('END ZONE', CANVAS_W / 2, CANVAS_H - ezHeight / 2)
-
-  const playHeight = CANVAS_H - ezHeight * 2
-  ctx.strokeStyle = 'rgba(255,255,255,0.55)'
-  ctx.lineWidth = 1
-  for (let i = 1; i < 10; i++) {
-    const y = ezHeight + (playHeight * i) / 10
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(CANVAS_W, y)
-    ctx.stroke()
-  }
-
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 2
-  ctx.strokeRect(1, 1, CANVAS_W - 2, CANVAS_H - 2)
 }
 
 function fullPath(player) {
@@ -296,12 +280,49 @@ function drawPlayer(ctx, px, py, player, isSelected, points) {
   ctx.fillText(player.number || '', px, py)
 }
 
+// Renders a play at an arbitrary size (e.g. a small library card) by scaling
+// into the same CANVAS_W x CANVAS_H coordinate space the full editor uses, so
+// thumbnails stay pixel-faithful to what the play actually looks like.
+export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3') {
+  ctx.save()
+  ctx.clearRect(0, 0, w, h)
+  ctx.scale(w / CANVAS_W, h / CANVAS_H)
+  drawField(ctx, fieldLines)
+
+  players.forEach((player) => {
+    const px = player.x * CANVAS_W
+    const py = player.y * CANVAS_H
+    const points = renderPathPoints(player)
+    drawPlayer(ctx, px, py, player, false, points)
+  })
+
+  if (ball) {
+    const ballPoints = renderPathPoints(ball)
+    if (ballPoints.length > 1) {
+      ctx.beginPath()
+      ctx.setLineDash([6, 5])
+      ctx.strokeStyle = '#d9a441'
+      ctx.lineWidth = 2.5
+      ctx.moveTo(ballPoints[0].x, ballPoints[0].y)
+      for (let i = 1; i < ballPoints.length; i++) ctx.lineTo(ballPoints[i].x, ballPoints[i].y)
+      ctx.stroke()
+      ctx.setLineDash([])
+    }
+    drawBall(ctx, ball.x * CANVAS_W, ball.y * CANVAS_H, -Math.PI / 4)
+  }
+
+  ctx.restore()
+}
+
 export default function FieldCanvas({
   players,
   setPlayers,
   onDragStart,
   onDragEnd,
   mode,
+  fieldLines = '53.3',
+  positionSide = 'offense',
+  playersPerSide = 5,
   selectedPlayerId,
   setSelectedPlayerId,
   isAnimating,
@@ -345,7 +366,7 @@ export default function FieldCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
-    drawField(ctx)
+    drawField(ctx, fieldLines)
     const list = playersRef.current
     const ball = ballRef.current
     const elapsed = elapsedRef.current
@@ -418,7 +439,7 @@ export default function FieldCanvas({
 
   useEffect(() => {
     draw()
-  }, [players, selectedPlayerId, speed, ball])
+  }, [players, selectedPlayerId, speed, ball, fieldLines])
 
   useEffect(() => {
     elapsedRef.current = 0
@@ -592,15 +613,15 @@ export default function FieldCanvas({
 
     if (modeRef.current === 'add') {
       if (hit) return
-      const number = String(playersRef.current.length + 1)
+      const label = getPositionLabel(playersRef.current.length, positionSide, playersPerSide)
       const color = PALETTE[nextColorIndexRef.current % PALETTE.length]
       nextColorIndexRef.current += 1
       setPlayers((prev) => [
         ...prev,
         {
           id: `${Date.now()}-${Math.random()}`,
-          number,
-          label: `P${number}`,
+          number: label,
+          label,
           color,
           x: x / CANVAS_W,
           y: y / CANVAS_H,
@@ -611,6 +632,7 @@ export default function FieldCanvas({
           preSnapMotion: false,
           pitchEnd: false,
           endCap: 'arrow',
+          note: '',
         },
       ])
       return

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useAppData } from '../context/AppDataContext.jsx'
 import FieldCanvas from '../components/playdesigner/FieldCanvas.jsx'
 import AnimationOverlay from '../components/playdesigner/AnimationOverlay.jsx'
 import PlayList from '../components/playdesigner/PlayList.jsx'
 import BallPanel from '../components/playdesigner/BallPanel.jsx'
 import PlayerToolbar from '../components/playdesigner/PlayerToolbar.jsx'
+import NewPlayModal from '../components/playbooks/NewPlayModal.jsx'
 
 const MODES = [
   { key: 'add', label: 'Add Player', hint: 'Click the field to place a player.' },
@@ -21,7 +23,13 @@ const MODES = [
 const MAX_HISTORY = 100
 
 export default function PlayDesigner() {
-  const { plays, savePlay, deletePlay, duplicatePlay } = useAppData()
+  const { playbookId, playId } = useParams()
+  const { plays: allPlays, savePlay, deletePlay, duplicatePlay, playbooks, updatePlaybook } = useAppData()
+  const playbook = playbookId ? playbooks.find((pb) => pb.id === playbookId) : null
+  const plays = allPlays.filter((p) => (playbookId ? p.playbookId === playbookId : !p.playbookId))
+  const singlePlayMode = !!playId
+  const [playMeta, setPlayMeta] = useState({ formation: '', categories: [], notes: '', side: 'offense' })
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [players, setPlayersRaw] = useState([])
   const [mode, setMode] = useState('add')
   const [selectedPlayerId, setSelectedPlayerId] = useState(null)
@@ -154,7 +162,14 @@ export default function PlayDesigner() {
   }
 
   const handleSave = () => {
-    const id = savePlay({ id: currentPlayId, name: playName.trim() || 'Untitled Play', players, ball })
+    const id = savePlay({
+      id: currentPlayId,
+      name: playName.trim() || 'Untitled Play',
+      playbookId: playbookId || null,
+      ...(singlePlayMode ? playMeta : {}),
+      players,
+      ball,
+    })
     setCurrentPlayId(id)
   }
 
@@ -168,6 +183,44 @@ export default function PlayDesigner() {
     setMode('move')
     resetAnimation()
     resetHistory()
+  }
+
+  useEffect(() => {
+    if (!playId) return
+    const play = allPlays.find((p) => p.id === playId)
+    if (!play) return
+    handleLoad(play)
+    if (!play.players || play.players.length === 0) setMode('add')
+    setPlayMeta({
+      formation: play.formation || '',
+      categories: play.categories || [],
+      notes: play.notes || '',
+      side: play.side || 'offense',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playId])
+
+  const handleSaveDetails = (data, newFormations, newCategories) => {
+    if (playbook && newFormations.length !== (playbook.formations || []).length) {
+      updatePlaybook(playbookId, { formations: newFormations })
+    }
+    if (playbook && newCategories.length !== (playbook.categories || []).length) {
+      updatePlaybook(playbookId, { categories: newCategories })
+    }
+    setPlayName(data.name)
+    setPlayMeta((prev) => ({ ...prev, formation: data.formation, categories: data.categories, notes: data.notes }))
+    savePlay({
+      id: currentPlayId,
+      name: data.name,
+      playbookId,
+      side: playMeta.side,
+      formation: data.formation,
+      categories: data.categories,
+      notes: data.notes,
+      players,
+      ball,
+    })
+    setShowDetailsModal(false)
   }
 
   const handleDeletePlay = (id) => {
@@ -187,7 +240,19 @@ export default function PlayDesigner() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <h1 className="text-2xl font-black text-slate-100">Play Designer</h1>
+        <div>
+          {playbookId && (
+            <Link
+              to={singlePlayMode ? `/playbooks/${playbookId}` : '/playbooks'}
+              className="text-xs font-semibold text-slate-400 hover:text-gold-400"
+            >
+              ← {singlePlayMode ? playbook?.name || 'Playbook' : 'Playbooks'}
+            </Link>
+          )}
+          <h1 className="text-2xl font-black text-slate-100">
+            {singlePlayMode ? playName || 'Untitled Play' : playbook ? playbook.name : 'Play Designer'}
+          </h1>
+        </div>
         <div className="flex items-center gap-2">
           <input
             value={playName}
@@ -201,12 +266,14 @@ export default function PlayDesigner() {
           >
             {currentPlayId ? 'Update Play' : 'Save Play'}
           </button>
-          <button
-            onClick={handleNewPlay}
-            className="px-3 py-1.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
-          >
-            New
-          </button>
+          {!singlePlayMode && (
+            <button
+              onClick={handleNewPlay}
+              className="px-3 py-1.5 rounded text-sm font-semibold text-slate-300 hover:text-white"
+            >
+              New
+            </button>
+          )}
         </div>
       </div>
 
@@ -265,6 +332,9 @@ export default function PlayDesigner() {
               onDragStart={beginTransientChange}
               onDragEnd={endTransientChange}
               mode={mode}
+              fieldLines={playbook?.fieldLines || '53.3'}
+              positionSide={playMeta.side || 'offense'}
+              playersPerSide={playbook?.playersPerSide || 5}
               selectedPlayerId={selectedPlayerId}
               setSelectedPlayerId={setSelectedPlayerId}
               isAnimating={isAnimating}
@@ -296,7 +366,7 @@ export default function PlayDesigner() {
                 onUpdate={updateSelected}
                 onSetCenter={() =>
                   updateSelected({
-                    label: selectedPlayer.label.trim().toUpperCase() === 'C' ? `P${selectedPlayer.number}` : 'C',
+                    label: selectedPlayer.label.trim().toUpperCase() === 'C' ? selectedPlayer.number : 'C',
                   })
                 }
                 onDone={() => setSelectedPlayerId(null)}
@@ -357,18 +427,54 @@ export default function PlayDesigner() {
             onDelete={() => setBall(null)}
           />
 
-          <div className="bg-navy-900 border border-navy-700 rounded-lg p-3">
-            <p className="text-xs font-bold text-gold-400 uppercase mb-2">Saved Plays</p>
-            <PlayList
-              plays={plays}
-              currentPlayId={currentPlayId}
-              onLoad={handleLoad}
-              onDuplicate={duplicatePlay}
-              onDelete={handleDeletePlay}
-            />
-          </div>
+          {singlePlayMode ? (
+            <div className="bg-navy-900 border border-navy-700 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-gold-400 uppercase">Play Details</p>
+                <button
+                  onClick={() => setShowDetailsModal(true)}
+                  className="text-xs font-semibold text-slate-400 hover:text-gold-400"
+                >
+                  Edit Details
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mb-1">
+                Formation: <span className="text-slate-200">{playMeta.formation || 'None'}</span>
+              </p>
+              {playMeta.categories.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {playMeta.categories.map((c) => (
+                    <span key={c} className="px-1.5 py-0.5 rounded bg-navy-800 text-[10px] text-slate-300">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {playMeta.notes && <p className="text-xs text-slate-400 italic">"{playMeta.notes}"</p>}
+            </div>
+          ) : (
+            <div className="bg-navy-900 border border-navy-700 rounded-lg p-3">
+              <p className="text-xs font-bold text-gold-400 uppercase mb-2">Saved Plays</p>
+              <PlayList
+                plays={plays}
+                currentPlayId={currentPlayId}
+                onLoad={handleLoad}
+                onDuplicate={duplicatePlay}
+                onDelete={handleDeletePlay}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {showDetailsModal && playbook && (
+        <NewPlayModal
+          playbook={playbook}
+          initial={{ name: playName, formation: playMeta.formation, categories: playMeta.categories, notes: playMeta.notes }}
+          onSave={handleSaveDetails}
+          onClose={() => setShowDetailsModal(false)}
+        />
+      )}
     </div>
   )
 }

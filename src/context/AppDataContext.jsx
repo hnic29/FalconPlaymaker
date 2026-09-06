@@ -9,11 +9,13 @@ export function AppDataProvider({ children }) {
   const [games, setGames] = useState(() => loadState('games', []))
   const [statLines, setStatLines] = useState(() => loadState('statLines', []))
   const [plays, setPlays] = useState(() => loadState('plays', []))
+  const [playbooks, setPlaybooks] = useState(() => loadState('playbooks', []))
 
   useEffect(() => saveState('players', players), [players])
   useEffect(() => saveState('games', games), [games])
   useEffect(() => saveState('statLines', statLines), [statLines])
   useEffect(() => saveState('plays', plays), [plays])
+  useEffect(() => saveState('playbooks', playbooks), [playbooks])
 
   const addPlayer = (player) => setPlayers((p) => [...p, { id: newId(), ...player }])
   const updatePlayer = (id, patch) =>
@@ -54,6 +56,18 @@ export function AppDataProvider({ children }) {
     return copy.id
   }
 
+  const addPlaybook = (playbook) => {
+    const id = newId()
+    setPlaybooks((pb) => [...pb, { ...playbook, id }])
+    return id
+  }
+  const updatePlaybook = (id, patch) =>
+    setPlaybooks((pb) => pb.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+  const deletePlaybook = (id) => {
+    setPlaybooks((pb) => pb.filter((p) => p.id !== id))
+    setPlays((pl) => pl.filter((p) => p.playbookId !== id))
+  }
+
   const value = {
     players,
     addPlayer,
@@ -71,6 +85,10 @@ export function AppDataProvider({ children }) {
     savePlay,
     deletePlay,
     duplicatePlay,
+    playbooks,
+    addPlaybook,
+    updatePlaybook,
+    deletePlaybook,
   }
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>

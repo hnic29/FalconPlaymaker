@@ -5,6 +5,8 @@ import Roster from './pages/Roster.jsx'
 import Schedule from './pages/Schedule.jsx'
 import Stats from './pages/Stats.jsx'
 import PlayDesigner from './pages/PlayDesigner.jsx'
+import Playbooks from './pages/Playbooks.jsx'
+import PlaybookLibrary from './pages/PlaybookLibrary.jsx'
 
 export default function App() {
   return (
@@ -15,6 +17,9 @@ export default function App() {
         <Route path="schedule" element={<Schedule />} />
         <Route path="stats" element={<Stats />} />
         <Route path="play-designer" element={<PlayDesigner />} />
+        <Route path="playbooks" element={<Playbooks />} />
+        <Route path="playbooks/:playbookId" element={<PlaybookLibrary />} />
+        <Route path="playbooks/:playbookId/plays/:playId" element={<PlayDesigner />} />
       </Route>
     </Routes>
   )

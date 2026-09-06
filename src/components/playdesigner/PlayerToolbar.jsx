@@ -57,6 +57,13 @@ export default function PlayerToolbar({ player, onUpdate, onSetCenter, onDone })
           />
         </div>
 
+        <input
+          value={player.note || ''}
+          onChange={(e) => onUpdate({ note: e.target.value })}
+          className="w-full mb-2 rounded bg-navy-950 border border-navy-700 px-2 py-1 text-xs text-slate-100"
+          placeholder="Position note (e.g. block backside DE)"
+        />
+
         <button
           onClick={onSetCenter}
           className={`w-full mb-2 px-2 py-1.5 rounded text-xs font-bold ${
