@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAppData } from '../context/AppDataContext.jsx'
 import FieldCanvas from '../components/playdesigner/FieldCanvas.jsx'
 import AnimationOverlay from '../components/playdesigner/AnimationOverlay.jsx'
-import BallPanel from '../components/playdesigner/BallPanel.jsx'
+import FootballToolbar from '../components/playdesigner/FootballToolbar.jsx'
 import PlayerToolbar from '../components/playdesigner/PlayerToolbar.jsx'
 import OptionRouteToolbar from '../components/playdesigner/OptionRouteToolbar.jsx'
 import StaticBallToolbar from '../components/playdesigner/StaticBallToolbar.jsx'
@@ -452,6 +452,15 @@ export default function PlayDesigner() {
                 onDone={() => setSelectedStaticBallId(null)}
               />
             )}
+
+            {mode === 'ball' && ball && (
+              <FootballToolbar
+                ball={ball}
+                onUpdate={(patch) => setBall((b) => (b ? { ...b, ...patch } : b))}
+                onDelete={() => setBall(null)}
+                onDone={() => setMode('route')}
+              />
+            )}
           </div>
         </div>
 
@@ -499,13 +508,6 @@ export default function PlayDesigner() {
               </ul>
             )}
           </div>
-
-          <BallPanel
-            ball={ball}
-            onAdd={() => setMode('ball')}
-            onUpdate={(patch) => setBall((b) => (b ? { ...b, ...patch } : b))}
-            onDelete={() => setBall(null)}
-          />
 
           <div className="bg-navy-900 border border-navy-700 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">

@@ -470,20 +470,9 @@ export function renderThumbnail(ctx, w, h, players, ball, fieldLines = '53.3', t
   optionRoutes.forEach((opt) => drawOptionRoute(ctx, opt, false))
   staticBalls.forEach((sb) => drawStaticBallAnnotation(ctx, sb, false))
 
-  if (ball) {
-    const ballPoints = renderPathPoints(ball)
-    if (ballPoints.length > 1) {
-      ctx.beginPath()
-      ctx.setLineDash([6, 5])
-      ctx.strokeStyle = '#d9a441'
-      ctx.lineWidth = 2.5
-      ctx.moveTo(ballPoints[0].x, ballPoints[0].y)
-      for (let i = 1; i < ballPoints.length; i++) ctx.lineTo(ballPoints[i].x, ballPoints[i].y)
-      ctx.stroke()
-      ctx.setLineDash([])
-    }
-    drawBall(ctx, ball.x * CANVAS_W, ball.y * CANVAS_H, -Math.PI / 4)
-  }
+  // The animated ball is intentionally excluded from thumbnails - like TRUE's
+  // printed playbooks, this preview should only show annotations that persist
+  // on the diagram, not the one-off animated football path.
 
   ctx.restore()
 }
@@ -1150,7 +1139,12 @@ export default function FieldCanvas({
         setBall({ x: x / CANVAS_W, y: y / CANVAS_H, route: [], curved: false })
         return
       }
-      if (hitTestEntity(currentBall, x, y) || hitTestRoutePoint(currentBall, x, y) !== null) return
+      if (hitTestEntity(currentBall, x, y)) {
+        // Tapping the ball's own origin finishes editing, same as the toolbar's green checkmark.
+        setMode?.('route')
+        return
+      }
+      if (hitTestRoutePoint(currentBall, x, y) !== null) return
       const nx = x / CANVAS_W
       const ny = y / CANVAS_H
       setBall((b) => (b ? { ...b, route: [...b.route, { x: nx, y: ny }] } : b))
